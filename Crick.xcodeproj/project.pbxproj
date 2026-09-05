@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A031FCBE1200000000000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A031FCBE1200000000000002 /* Assets.xcassets */; };
 		020D538F25309939D500C323 /* CreekRunner in Frameworks */ = {isa = PBXBuildFile; productRef = 6672AF508AB47FDC77A33648 /* CreekRunner */; };
 		23999D6612D0235267855AF2 /* CreekCore in Frameworks */ = {isa = PBXBuildFile; productRef = 0734959D15DEDD008A3DCC2C /* CreekCore */; };
 		2A25600B4B53BEACD5D8296C /* CreekCore in Frameworks */ = {isa = PBXBuildFile; productRef = FF8A8CFCB35651AA6D4DC941 /* CreekCore */; };
@@ -37,6 +38,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		A031FCBE1200000000000002 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0DC0708E52C8478C38583569 /* CrickiOSTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CrickiOSTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		1E52EAD3B93AD77E08925BEB /* CrickiOSUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrickiOSUITests.swift; sourceTree = "<group>"; };
 		40C50607481296B1A16680C3 /* CreekCrossSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreekCrossSection.swift; sourceTree = "<group>"; };
@@ -44,7 +46,7 @@
 		56132AF371609C67B5D3B543 /* CrickiOSUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CrickiOSUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		676C3CA2F16064FC6226BEC8 /* CrickApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrickApp.swift; sourceTree = "<group>"; };
 		73C45D9D17ADE10D452BBEDC /* crick */ = {isa = PBXFileReference; lastKnownFileType = folder; name = crick; path = .; sourceTree = SOURCE_ROOT; };
-		9D402D2EB621E8F7A04CD968 /* CrickiOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = CrickiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9D402D2EB621E8F7A04CD968 /* CrickiOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CrickiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CCC870FA0FD1FE994C1FE7D1 /* SimulationSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulationSession.swift; sourceTree = "<group>"; };
 		F05FD3F7B45ACFDDE2B1D44D /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -103,6 +105,7 @@
 		B02C97916D54848D1C840937 /* CrickiOS */ = {
 			isa = PBXGroup;
 			children = (
+				A031FCBE1200000000000002 /* Assets.xcassets */,
 				F05FD3F7B45ACFDDE2B1D44D /* ContentView.swift */,
 				40C50607481296B1A16680C3 /* CreekCrossSection.swift */,
 				676C3CA2F16064FC6226BEC8 /* CrickApp.swift */,
@@ -178,6 +181,7 @@
 			buildPhases = (
 				4F5DF28B91F94A057A7E1A69 /* Sources */,
 				0EA2D0AB2D247ABDB340085F /* Frameworks */,
+				A031FCBE1200000000000003 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -232,6 +236,17 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A031FCBE1200000000000003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A031FCBE1200000000000001 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		34ED8D8A0CD877F5E2187DEF /* Sources */ = {
@@ -339,6 +354,15 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = X2ULA6KJUN;
+				MARKETING_VERSION = 0.1.0;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_KEY_CFBundleDisplayName = Crick;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -459,6 +483,15 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = X2ULA6KJUN;
+				MARKETING_VERSION = 0.1.0;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_KEY_CFBundleDisplayName = Crick;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

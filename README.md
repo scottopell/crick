@@ -2,7 +2,7 @@
 
 Crick is an experimental, human-scale creek-tending game. Read [VISION.md](VISION.md) for the product direction.
 
-The repository contains a first Scope 1 headless creek laboratory: a platform-independent deterministic Swift core, reproducible scenarios, a command-line runner, versioned snapshots, structured diagnostics, and tests. It does not contain an iOS client.
+The repository contains a first Scope 1 headless creek laboratory: a platform-independent deterministic Swift core, reproducible scenarios, a command-line runner, versioned snapshots, structured diagnostics, and tests. It also includes a native SwiftUI iOS laboratory for interactive playtesting. See [first playtest readiness](PLAYTEST_READINESS.md) for release preparation and Xcode Cloud steps.
 
 ## Requirements
 
@@ -132,4 +132,4 @@ This is a deliberately small behavioral model, not CFD or engineering software:
 - Rocks are cell resistance values, not shaped rigid bodies; the seed is recorded but procedural generation is not yet implemented.
 - Sediment has one continuous class; banks, gravel sorting, wakes, eddies, side channels, and rock mobility are not modeled.
 - Feature evaluation for swimming holes and crossings is not implemented.
-- Snapshot migration, optimized offline catch-up, rendering, persistence I/O policy, and the native iOS client remain future work.
+- Snapshot migration, optimized offline catch-up, and richer rendering remain future work. The native iOS laboratory uses explicit Save/Resume for local snapshots.

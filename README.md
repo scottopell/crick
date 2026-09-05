@@ -60,6 +60,27 @@ Built-in fixtures provide:
 
 Tests cover exact replay, fixed-step partitioning, atomic command scheduling and rejection, water and sediment budgets, dry and extreme-flow states, non-negative finite state, snapshot round-trip/version/compatibility rejection, repeated save/resume equivalence, scenario behavior, strict CLI parsing, and JSON/CSV diagnostics. Conservation uses a relative tolerance of `1e-9 × max(1, expected inventory)` so diagnostics remain meaningful across scenario scales.
 
+## Native iOS laboratory
+
+The first native client is generated with [XcodeGen](https://github.com/yonaskolb/XcodeGen) and targets iOS 17 or later:
+
+```sh
+xcodegen generate
+xcodebuild -project Crick.xcodeproj -scheme CrickiOS \
+  -destination 'platform=iOS Simulator,name=iPhone 15 Pro' test
+```
+
+The app is a projection and intent adapter, not a second simulation:
+
+- A `@MainActor` `SimulationSession` privately owns the only `Simulator`.
+- SwiftUI receives immutable cell and diagnostic projections; no mutable `WorldState` is exposed.
+- State changes only through explicit load, fixed-tick advance, and rock-command intents. There are no timers or wall-clock inputs.
+- `CreekCore` remains platform-neutral and performs no persistence I/O.
+- The app-layer store writes a client envelope containing scenario presentation metadata and the versioned authoritative `SimulationSnapshot`.
+- Resume replaces the private simulator only after shared snapshot decoding and invariant validation succeeds.
+
+App-layer unit tests prove explicit tick counts, command routing, immutable projection updates, and snapshot recovery. An XCUITest drives the rendered controls through advance, rock placement, save, further advancement, and restoration. GitHub's macOS job regenerates the project and builds the app for a generic simulator; simulator tests run locally because hosted simulator availability varies.
+
 ## Known limitations
 
 This is a deliberately small behavioral model, not CFD or engineering software:

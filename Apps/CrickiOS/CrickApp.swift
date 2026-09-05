@@ -12,6 +12,9 @@ struct CrickApp: App {
     private var rootView: some View {
         do {
             let store = try FileSnapshotStore.applicationSupport()
+            if ProcessInfo.processInfo.environment["CRICK_UI_TEST_RESET"] == "1" {
+                try store.removeIfPresent()
+            }
             let session = try SimulationSession(snapshotStore: store)
             return AnyView(ContentView(session: session))
         } catch {

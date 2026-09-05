@@ -36,6 +36,7 @@ struct SimulationProjection: Equatable {
 protocol SnapshotStoring {
     func save(_ data: Data) throws
     func load() throws -> Data
+    func exists() -> Bool
 }
 
 struct FileSnapshotStore: SnapshotStoring {
@@ -47,6 +48,15 @@ struct FileSnapshotStore: SnapshotStoring {
 
     func load() throws -> Data {
         try Data(contentsOf: url)
+    }
+
+    func removeIfPresent() throws {
+        guard exists() else { return }
+        try FileManager.default.removeItem(at: url)
+    }
+
+    func exists() -> Bool {
+        FileManager.default.fileExists(atPath: url.path)
     }
 
     static func applicationSupport() throws -> Self {
@@ -80,6 +90,7 @@ final class SimulationSession {
 
     private(set) var projection: SimulationProjection
     private(set) var message = "Ready"
+    private(set) var canResume: Bool
 
     init(
         scenario: ScenarioDefinition = BuiltInScenarios.baseline,
@@ -89,6 +100,7 @@ final class SimulationSession {
         self.simulator = simulator
         self.selectedRockCell = nil
         self.snapshotStore = snapshotStore
+        self.canResume = snapshotStore.exists()
         self.projection = Self.project(
             scenarioName: scenario.name,
             simulator: simulator
@@ -128,6 +140,7 @@ final class SimulationSession {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         try snapshotStore.save(try encoder.encode(snapshot))
+        canResume = true
         message = "Saved tick \(simulator.state.tick)"
     }
 

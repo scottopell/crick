@@ -14,6 +14,8 @@ struct ContentView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     header
+                    firstUseGuide
+                    controls
 
                     CreekCrossSection(
                         projection: session.projection,
@@ -26,7 +28,6 @@ struct ContentView: View {
                         RockEffectCard(effect: effect)
                     }
 
-                    controls
                     diagnostics
                     snapshotControls
                 }
@@ -58,6 +59,22 @@ struct ContentView: View {
                 metric("Sediment", session.projection.totalSediment)
             }
         }
+    }
+
+    private var firstUseGuide: some View {
+        HStack(spacing: 12) {
+            Label("1. Tap a +", systemImage: "plus.circle.fill")
+            Image(systemName: "arrow.right")
+                .foregroundStyle(.secondary)
+            Label("2. Advance", systemImage: "forward.fill")
+        }
+        .font(.subheadline.weight(.semibold))
+        .padding(12)
+        .frame(maxWidth: .infinity)
+        .background(.green.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("First, tap a plus in the creek to place a rock. Second, press Advance to run fixed ticks.")
+        .accessibilityIdentifier("first-use-guide")
     }
 
     private var controls: some View {
@@ -105,10 +122,19 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Snapshot").font(.headline)
             HStack {
-                Button("Save") { perform { try session.save() } }
-                    .accessibilityIdentifier("save-snapshot")
-                Button("Resume") { perform { try session.resume() } }
-                    .accessibilityIdentifier("resume-snapshot")
+                Button("Save") {
+                    perform(failure: "Couldn’t save this creek.") {
+                        try session.save()
+                    }
+                }
+                .accessibilityIdentifier("save-snapshot")
+                Button("Resume") {
+                    perform(failure: "Couldn’t resume. Your current creek is unchanged.") {
+                        try session.resume()
+                    }
+                }
+                .disabled(!session.canResume)
+                .accessibilityIdentifier("resume-snapshot")
             }
             .buttonStyle(.bordered)
             Text(session.message)
@@ -126,11 +152,14 @@ struct ContentView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func perform(_ action: () throws -> Void) {
+    private func perform(
+        failure: String = "That change couldn’t be applied.",
+        _ action: () throws -> Void
+    ) {
         do {
             try action()
         } catch {
-            errorMessage = String(describing: error)
+            errorMessage = failure
         }
     }
 }

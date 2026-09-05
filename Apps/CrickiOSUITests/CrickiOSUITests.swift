@@ -3,7 +3,16 @@ import XCTest
 final class CrickiOSUITests: XCTestCase {
     func testInteractiveCreekAndRecovery() {
         let app = XCUIApplication()
+        app.launchEnvironment["CRICK_UI_TEST_RESET"] = "1"
         app.launch()
+
+        let guide = app.descendants(matching: .any)
+            .matching(identifier: "first-use-guide").firstMatch
+        XCTAssertTrue(guide.waitForExistence(timeout: 5))
+        XCTAssertTrue(guide.label.contains("tap a plus"))
+        XCTAssertTrue(app.buttons["advance-one"].isHittable)
+        XCTAssertTrue(app.buttons["advance-ten"].isHittable)
+        XCTAssertFalse(app.buttons["resume-snapshot"].isEnabled)
 
         let tick = app.staticTexts["tick-value"]
         XCTAssertTrue(tick.waitForExistence(timeout: 5))

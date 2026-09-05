@@ -95,6 +95,34 @@ The native lab renders every authoritative cell as a creek cross-section from up
 
 Causal tests run identical baseline and intervention sessions, place a rock only in the intervention, advance both by 40 fixed ticks, and require greater water depth at the obstructed cell plus lower depth in the next downstream cell. Additional coverage verifies latest-rock attribution, outlet-cell safety, accessibility, rendered tap-to-command behavior, and save/resume after interaction.
 
+## Physical-device and TestFlight checklist
+
+Simulator QA is the release gate for the current slice; a phone is not required to continue development. When a physical device or TestFlight group is available, run this bounded session:
+
+- [ ] Fresh install launches to baseline tick 0 without an error or saved-state assumption.
+- [ ] The two-step guide, both Advance controls, and upstream/downstream labels are understandable before explanation.
+- [ ] Each of the six creek cells is comfortably tappable and the selected cell visibly changes from plus to rock.
+- [ ] Rock placement does not advance the tick; Advance 1 and Advance 10 change it by exactly those amounts.
+- [ ] After advancement, water pooling and downstream change are visually noticeable and the observation card names the selected rock and elapsed fixed ticks.
+- [ ] Save enables Resume; advancing and resuming returns to the saved tick, selected rock, and creek state.
+- [ ] Missing Resume is disabled; corrupt/unreadable recovery shows useful language and preserves the current creek.
+- [ ] VoiceOver reads the guide, direction, cells in upstream-to-downstream order, controls, causal summary, diagnostics, and snapshot actions coherently.
+- [ ] Largest accessibility text, Increase Contrast, Reduce Motion, portrait, and landscape preserve reachable controls without overlap.
+- [ ] Background/foreground and process relaunch do not advance simulation or imply automatic restore.
+- [ ] Record launch responsiveness, heat, battery impact, and any unexpected signing/storage behavior on device.
+
+Top questions for first-time users:
+
+1. Without coaching, what do you think the brown, blue, plus, rock, and arrows represent?
+2. What do you expect to happen after tapping a plus? Is pressing Advance the next action you naturally choose?
+3. Can you tell which side is upstream and where water is pooling after placing a rock?
+4. Does the observed-change card help connect your intervention to the creek, or does it feel like developer data?
+5. Is the difference between Advance 1 and Advance 10 useful and predictable?
+6. What do you expect Save and Resume—and closing/reopening the app—to do?
+7. Does this interaction feel like tending a creek, or only operating a diagnostic model? What single change would improve that feeling most?
+
+Review has reached diminishing returns for simulator-only scope: fresh reviewers and direct reproduction found and closed first-use instruction placement, resume availability, recovery preservation, compact-screen execution, latest-rock attribution, and accessibility-summary issues. Remaining concerns require perception, touch, VoiceOver, and expectation evidence from people on physical hardware; expanding simulation or inventing answers in UI code would not be justified.
+
 ## Known limitations
 
 This is a deliberately small behavioral model, not CFD or engineering software:

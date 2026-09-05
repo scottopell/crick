@@ -7,6 +7,8 @@ import Testing
 private final class MemorySnapshotStore: SnapshotStoring {
     var data: Data?
 
+    func exists() -> Bool { data != nil }
+
     func save(_ data: Data) {
         self.data = data
     }
@@ -15,6 +17,17 @@ private final class MemorySnapshotStore: SnapshotStoring {
         guard let data else { throw CocoaError(.fileNoSuchFile) }
         return data
     }
+}
+
+@MainActor
+@Test("Resume is unavailable until a snapshot exists")
+func resumeAvailability() throws {
+    let store = MemorySnapshotStore()
+    let session = try SimulationSession(snapshotStore: store)
+
+    #expect(!session.canResume)
+    try session.save()
+    #expect(session.canResume)
 }
 
 @MainActor
@@ -100,6 +113,22 @@ func saveResume() throws {
     #expect(session.projection.totalWater == saved.totalWater)
     #expect(session.projection.totalSediment == saved.totalSediment)
     #expect(session.projection.scenarioName == saved.scenarioName)
+}
+
+@MainActor
+@Test("Malformed resume preserves the current authoritative projection")
+func malformedResumePreservesState() throws {
+    let store = MemorySnapshotStore()
+    store.data = Data("not a snapshot".utf8)
+    let session = try SimulationSession(snapshotStore: store)
+    session.advance(ticks: 7)
+    let before = session.projection
+
+    #expect(throws: Error.self) {
+        try session.resume()
+    }
+    #expect(session.projection == before)
+    #expect(session.canResume)
 }
 
 @MainActor

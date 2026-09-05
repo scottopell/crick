@@ -17,7 +17,10 @@ jobs:
         run: swift --version
       - name: Build
         run: swift build
-      - name: Run CLI
-        run: swift run crick
+      - name: Run scenarios
+        run: |
+          swift run crick run baseline
+          swift run crick run rock
+          swift run crick run flood
       - name: Test
         run: swift test

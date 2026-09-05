@@ -2,7 +2,7 @@
 
 Crick is an experimental, human-scale creek-tending game. Read [VISION.md](VISION.md) for the product direction.
 
-The repository currently contains the bootstrap for Scope 1 from the development handoff: a platform-independent Swift core, a small command-line executable, and tests. It does not yet contain a creek simulation or an iOS client.
+The repository contains a first Scope 1 headless creek laboratory: a platform-independent deterministic Swift core, reproducible scenarios, a command-line runner, versioned snapshots, structured diagnostics, and tests. It does not contain an iOS client.
 
 ## Requirements
 
@@ -22,30 +22,49 @@ The package uses Swift tools version 6.3 and Swift 6 language mode. The core int
 
 ```sh
 swift build
-swift run crick
+swift run crick list
+swift run crick run baseline
+swift run crick run rock --json /tmp/rock.json --csv /tmp/rock.csv \
+  --snapshot /tmp/rock.snapshot.json
+swift run crick resume /tmp/rock.snapshot.json --ticks 20
 swift test
 ```
 
-Expected CLI output:
-
-```text
-Crick scenario seed: 42
-```
+Each scenario prints its ending tick, water and sediment inventories, conservation residuals, and invariant-violation count. JSON evidence contains the complete scenario definition, initial state, tick-indexed commands, final state, and diagnostics. CSV exports final per-cell values.
 
 GitHub Actions independently runs the build, executable, and tests with Swift 6.3.3 on Linux. Local commands are the development feedback loop; CI is a verification gate.
 
-## Current scope
+## Simulation contract
 
-Implemented:
+`CreekCore` owns a one-dimensional reach of cells with bed elevation, water depth, suspended sediment, and rock resistance. The caller advances integer ticks; one authoritative tick represents one second. Accelerated execution runs more fixed ticks rather than changing the timestep.
 
-- `CreekCore` library boundary
-- `crick` headless executable boundary
-- Minimal seeded scenario value and deterministic smoke test
+At the start of each tick, boundary water and sediment enter the upstream cell. Transfers are calculated in stable cell order from the pre-tick state, then sediment erodes or deposits according to local transport capacity, and water and suspended sediment may leave through the downstream boundary. Every external transfer is accumulated in a material ledger.
 
-Not yet implemented:
+Commands carry an explicit tick. Commands sharing a tick execute in caller order before that tick advances. Invalid cells, quantities, and past/future direct application are rejected without mutating the world.
 
-- Authoritative world state and tick semantics
-- Water flow, terrain, rocks, or sediment
-- Commands, snapshots, replay, or diagnostic exports
-- Feature evaluation
-- Native iOS client
+### Determinism guarantee
+
+The same supported Crick build and platform, initial state or snapshot, and ordered command sequence produce exactly equal authoritative states. The core uses fixed ticks, stable array traversal, and no wall clock, file I/O, global random state, or unordered collection traversal.
+
+Cross-build and cross-architecture bit-identical floating-point replay is **not** guaranteed. Snapshots therefore contain both schema and simulation versions and reject unsupported versions.
+
+## Current evidence
+
+Built-in fixtures provide:
+
+- `baseline`: ordinary flow through an unobstructed reach
+- `rock`: a tick-indexed obstruction that creates measurable upstream backwater
+- `flood`: a bounded high-flow pulse that causes persistent, conserved bed change
+
+Tests cover exact replay, fixed-step partitioning, command order and rejection, water and sediment budgets, non-negative finite state, snapshot round-trip/version rejection, save/resume equivalence, scenario behavior, and JSON/CSV diagnostics.
+
+## Known limitations
+
+This is a deliberately small behavioral model, not CFD or engineering software:
+
+- The reach is one-dimensional and uses unit-width/unit-area cells.
+- Water transfer, outlet flow, transport capacity, erosion, and deposition are game-oriented coefficients rather than calibrated hydraulics.
+- Rocks are cell resistance values, not shaped rigid bodies; the seed is recorded but procedural generation is not yet implemented.
+- Sediment has one continuous class; banks, gravel sorting, wakes, eddies, side channels, and rock mobility are not modeled.
+- Feature evaluation for swimming holes and crossings is not implemented.
+- Snapshot migration, optimized offline catch-up, rendering, persistence I/O policy, and the native iOS client remain future work.

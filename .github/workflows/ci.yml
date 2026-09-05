@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  swift:
+    runs-on: ubuntu-24.04
+    container: swift:6.3.3-noble
+    steps:
+      - uses: actions/checkout@v4
+      - name: Record toolchain
+        run: swift --version
+      - name: Build
+        run: swift build
+      - name: Run CLI
+        run: swift run crick
+      - name: Test
+        run: swift test

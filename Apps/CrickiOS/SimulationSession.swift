@@ -11,6 +11,15 @@ struct CellProjection: Equatable, Identifiable {
     let rockResistance: Double
 }
 
+struct RockEffectProjection: Equatable {
+    let cell: Int
+    let resistance: Double
+    let elapsedTicks: UInt64
+    let upstreamDepthChange: Double
+    let downstreamDepthChange: Double?
+    let flowPastRock: Double?
+}
+
 struct SimulationProjection: Equatable {
     let scenarioName: String
     let tick: UInt64
@@ -19,7 +28,9 @@ struct SimulationProjection: Equatable {
     let waterResidual: Double
     let sedimentResidual: Double
     let violations: [String]
+    let waterTransfers: [Double]
     let cells: [CellProjection]
+    let rockEffect: RockEffectProjection?
 }
 
 protocol SnapshotStoring {
@@ -56,6 +67,7 @@ struct FileSnapshotStore: SnapshotStoring {
 
 private struct ClientSnapshot: Codable {
     let scenarioName: String
+    let selectedRockCell: Int?
     let simulation: SimulationSnapshot
 }
 
@@ -63,6 +75,7 @@ private struct ClientSnapshot: Codable {
 @Observable
 final class SimulationSession {
     private var simulator: Simulator
+    private var selectedRockCell: Int?
     private let snapshotStore: any SnapshotStoring
 
     private(set) var projection: SimulationProjection
@@ -74,6 +87,7 @@ final class SimulationSession {
     ) throws {
         let simulator = try Simulator(state: scenario.initialState)
         self.simulator = simulator
+        self.selectedRockCell = nil
         self.snapshotStore = snapshotStore
         self.projection = Self.project(
             scenarioName: scenario.name,
@@ -83,13 +97,15 @@ final class SimulationSession {
 
     func load(_ scenario: ScenarioDefinition) throws {
         simulator = try Simulator(state: scenario.initialState)
+        selectedRockCell = nil
         refresh(scenarioName: scenario.name)
         message = "Loaded \(scenario.name)"
     }
 
     func advance(ticks: UInt64) {
+        let before = projection
         simulator.step(count: ticks)
-        refresh()
+        refresh(effectComparedWith: before)
         message = "Advanced \(ticks) fixed tick\(ticks == 1 ? "" : "s")"
     }
 
@@ -98,6 +114,7 @@ final class SimulationSession {
             tick: simulator.state.tick,
             command: .placeRock(cell: cell, resistance: resistance)
         ))
+        selectedRockCell = cell
         refresh()
         message = "Placed rock at cell \(cell)"
     }
@@ -105,6 +122,7 @@ final class SimulationSession {
     func save() throws {
         let snapshot = ClientSnapshot(
             scenarioName: projection.scenarioName,
+            selectedRockCell: selectedRockCell,
             simulation: SimulationSnapshot(simulator: simulator)
         )
         let encoder = JSONEncoder()
@@ -119,15 +137,52 @@ final class SimulationSession {
             from: snapshotStore.load()
         )
         simulator = try snapshot.simulation.restore()
+        selectedRockCell = snapshot.selectedRockCell
         refresh(scenarioName: snapshot.scenarioName)
         message = "Resumed tick \(simulator.state.tick)"
     }
 
-    private func refresh(scenarioName: String? = nil) {
-        projection = Self.project(
+    private func refresh(
+        scenarioName: String? = nil,
+        effectComparedWith previous: SimulationProjection? = nil
+    ) {
+        var updated = Self.project(
             scenarioName: scenarioName ?? projection.scenarioName,
             simulator: simulator
         )
+        if let previous,
+           let selectedRockCell,
+           let rock = updated.cells.first(where: {
+               $0.id == selectedRockCell && $0.rockResistance > 0
+           }) {
+            let downstream = updated.cells.indices.contains(rock.id + 1)
+                ? updated.cells[rock.id + 1].waterDepth
+                    - previous.cells[rock.id + 1].waterDepth
+                : nil
+            updated = SimulationProjection(
+                scenarioName: updated.scenarioName,
+                tick: updated.tick,
+                totalWater: updated.totalWater,
+                totalSediment: updated.totalSediment,
+                waterResidual: updated.waterResidual,
+                sedimentResidual: updated.sedimentResidual,
+                violations: updated.violations,
+                waterTransfers: updated.waterTransfers,
+                cells: updated.cells,
+                rockEffect: RockEffectProjection(
+                    cell: rock.id,
+                    resistance: rock.rockResistance,
+                    elapsedTicks: updated.tick - previous.tick,
+                    upstreamDepthChange: rock.waterDepth
+                        - previous.cells[rock.id].waterDepth,
+                    downstreamDepthChange: downstream,
+                    flowPastRock: updated.waterTransfers.indices.contains(rock.id)
+                        ? updated.waterTransfers[rock.id]
+                        : nil
+                )
+            )
+        }
+        projection = updated
     }
 
     private static func project(
@@ -143,6 +198,7 @@ final class SimulationSession {
             waterResidual: diagnostics.balance.waterResidual,
             sedimentResidual: diagnostics.balance.sedimentResidual,
             violations: diagnostics.violations,
+            waterTransfers: diagnostics.lastTick?.waterTransfers ?? [],
             cells: simulator.state.cells.enumerated().map { index, cell in
                 CellProjection(
                     id: index,
@@ -151,7 +207,8 @@ final class SimulationSession {
                     suspendedSediment: cell.suspendedSediment,
                     rockResistance: cell.rockResistance
                 )
-            }
+            },
+            rockEffect: nil
         )
     }
 }

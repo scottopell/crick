@@ -1,36 +1,46 @@
 import XCTest
 
 final class CrickiOSUITests: XCTestCase {
-    func testExplicitControlsAndRecovery() {
+    func testInteractiveCreekAndRecovery() {
         let app = XCUIApplication()
         app.launch()
 
         let tick = app.staticTexts["tick-value"]
         XCTAssertTrue(tick.waitForExistence(timeout: 5))
-        XCTAssertEqual(tick.label, "Tick, 0")
+        XCTAssertEqual(tick.label, "Tick 0")
 
-        app.buttons["advance-one"].tap()
-        XCTAssertEqual(tick.label, "Tick, 1")
+        let creekCell = app.buttons["creek-cell-2"]
+        XCTAssertTrue(creekCell.isHittable)
+        creekCell.tap()
+        XCTAssertTrue(creekCell.label.contains("rock resistance 0.800"))
+        XCTAssertEqual(tick.label, "Tick 0")
 
-        app.buttons["place-rock"].tap()
-        XCTAssertEqual(tick.label, "Tick, 1")
+        let advanceTen = app.buttons["advance-ten"]
+        scrollToElement(advanceTen, in: app)
+        advanceTen.tap()
+        XCTAssertEqual(tick.label, "Tick 10")
+        let effectCard = app.descendants(matching: .any)
+            .matching(identifier: "rock-effect-card").firstMatch
+        scrollToElement(effectCard, in: app)
+        XCTAssertTrue(effectCard.label.contains("Observed around selected rock over 10 fixed ticks"))
+        XCTAssertTrue(effectCard.label.contains("Upstream-side depth change"))
 
         let save = app.buttons["save-snapshot"]
         scrollToElement(save, in: app)
         save.tap()
-        XCTAssertTrue(app.staticTexts["session-message"].label.contains("Saved tick 1"))
+        XCTAssertTrue(app.staticTexts["session-message"].label.contains("Saved tick 10"))
 
         let advance = app.buttons["advance-one"]
         scrollToElement(advance, in: app, direction: .down)
         advance.tap()
-        XCTAssertEqual(tick.label, "Tick, 2")
+        XCTAssertEqual(tick.label, "Tick 11")
 
         let resume = app.buttons["resume-snapshot"]
         scrollToElement(resume, in: app)
         resume.tap()
-        XCTAssertTrue(app.staticTexts["session-message"].label.contains("Resumed tick 1"))
+        XCTAssertTrue(app.staticTexts["session-message"].label.contains("Resumed tick 10"))
         scrollToElement(tick, in: app, direction: .down)
-        XCTAssertEqual(tick.label, "Tick, 1")
+        XCTAssertEqual(tick.label, "Tick 10")
     }
 
     private enum ScrollDirection { case up, down }

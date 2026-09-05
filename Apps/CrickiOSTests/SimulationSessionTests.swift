@@ -41,6 +41,44 @@ func rockIntent() throws {
     #expect(session.projection.cells[2].rockResistance == 0.8)
     #expect(session.projection.tick == 0)
     #expect(session.projection.violations.isEmpty)
+    #expect(session.projection.rockEffect == nil)
+}
+
+@MainActor
+@Test("Tapped rock causes upstream pooling and downstream reduction")
+func causalRockEffect() throws {
+    let baseline = try SimulationSession(snapshotStore: MemorySnapshotStore())
+    let obstructed = try SimulationSession(snapshotStore: MemorySnapshotStore())
+
+    try obstructed.placeRock(cell: 2, resistance: 0.8)
+    baseline.advance(ticks: 40)
+    obstructed.advance(ticks: 40)
+
+    #expect(obstructed.projection.cells[2].waterDepth
+        > baseline.projection.cells[2].waterDepth)
+    #expect(obstructed.projection.cells[3].waterDepth
+        < baseline.projection.cells[3].waterDepth)
+    #expect(obstructed.projection.rockEffect?.cell == 2)
+    #expect(obstructed.projection.rockEffect?.elapsedTicks == 40)
+    #expect(obstructed.projection.rockEffect?.upstreamDepthChange != 0)
+    #expect(obstructed.projection.rockEffect?.downstreamDepthChange != nil)
+    #expect(obstructed.projection.rockEffect?.flowPastRock != nil)
+    #expect(obstructed.projection.violations.isEmpty)
+}
+
+@MainActor
+@Test("Effect follows the latest selected rock and handles the outlet")
+func selectedRockAttribution() throws {
+    let session = try SimulationSession(snapshotStore: MemorySnapshotStore())
+    try session.placeRock(cell: 1, resistance: 0.4)
+    try session.placeRock(cell: 5, resistance: 0.7)
+
+    session.advance(ticks: 3)
+
+    #expect(session.projection.rockEffect?.cell == 5)
+    #expect(session.projection.rockEffect?.elapsedTicks == 3)
+    #expect(session.projection.rockEffect?.downstreamDepthChange == nil)
+    #expect(session.projection.rockEffect?.flowPastRock == nil)
 }
 
 @MainActor

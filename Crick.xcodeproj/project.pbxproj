@@ -12,6 +12,7 @@
 		2A25600B4B53BEACD5D8296C /* CreekCore in Frameworks */ = {isa = PBXBuildFile; productRef = FF8A8CFCB35651AA6D4DC941 /* CreekCore */; };
 		4EAB5DFE028965D9EE37E2D6 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F05FD3F7B45ACFDDE2B1D44D /* ContentView.swift */; };
 		63E664B5A034030912DF1C22 /* CrickApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 676C3CA2F16064FC6226BEC8 /* CrickApp.swift */; };
+		8D87099D40244263A12B8C75 /* CreekCrossSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40C50607481296B1A16680C3 /* CreekCrossSection.swift */; };
 		959F429A9CBDBC0F54E99D2F /* SimulationSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55D58A8787905E58474E234A /* SimulationSessionTests.swift */; };
 		9A4E9DE54458630B51A79AA5 /* CrickiOSUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E52EAD3B93AD77E08925BEB /* CrickiOSUITests.swift */; };
 		B44EE3F259CABA6C8185E2AF /* CreekRunner in Frameworks */ = {isa = PBXBuildFile; productRef = A2B0B1631316751B90AF0EC4 /* CreekRunner */; };
@@ -38,6 +39,7 @@
 /* Begin PBXFileReference section */
 		0DC0708E52C8478C38583569 /* CrickiOSTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CrickiOSTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		1E52EAD3B93AD77E08925BEB /* CrickiOSUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrickiOSUITests.swift; sourceTree = "<group>"; };
+		40C50607481296B1A16680C3 /* CreekCrossSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreekCrossSection.swift; sourceTree = "<group>"; };
 		55D58A8787905E58474E234A /* SimulationSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulationSessionTests.swift; sourceTree = "<group>"; };
 		56132AF371609C67B5D3B543 /* CrickiOSUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CrickiOSUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		676C3CA2F16064FC6226BEC8 /* CrickApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrickApp.swift; sourceTree = "<group>"; };
@@ -102,6 +104,7 @@
 			isa = PBXGroup;
 			children = (
 				F05FD3F7B45ACFDDE2B1D44D /* ContentView.swift */,
+				40C50607481296B1A16680C3 /* CreekCrossSection.swift */,
 				676C3CA2F16064FC6226BEC8 /* CrickApp.swift */,
 				CCC870FA0FD1FE994C1FE7D1 /* SimulationSession.swift */,
 			);
@@ -252,6 +255,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4EAB5DFE028965D9EE37E2D6 /* ContentView.swift in Sources */,
+				8D87099D40244263A12B8C75 /* CreekCrossSection.swift in Sources */,
 				63E664B5A034030912DF1C22 /* CrickApp.swift in Sources */,
 				C752A23FCDF9AB674418905F /* SimulationSession.swift in Sources */,
 			);

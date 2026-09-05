@@ -81,6 +81,20 @@ The app is a projection and intent adapter, not a second simulation:
 
 App-layer unit tests prove explicit tick counts, command routing, immutable projection updates, and snapshot recovery. An XCUITest drives the rendered controls through advance, rock placement, save, further advancement, and restoration. GitHub's macOS job regenerates the project and builds the app for a generic simulator; simulator tests run locally because hosted simulator availability varies.
 
+### Interactive creek cross-section
+
+The native lab renders every authoritative cell as a creek cross-section from upstream to downstream:
+
+- Brown bed height projects `bedElevation`; blue water height projects `waterDepth`.
+- Per-boundary arrows project the most recent authoritative water transfers.
+- Plus markers communicate tappable empty cells; rock markers project non-zero resistance.
+- Tapping a cell sends `ScheduledCommand(tick: currentTick, command: .placeRock(...))` through `SimulationSession`; the view never edits cell data.
+- Explicit one- and ten-tick controls are the only advancement path.
+- After advancement, a presentation card reports observed depth changes around the most recently selected rock and flow past it. It is intentionally labeled as observation over the last fixed-tick batch; causal proof comes from the control-versus-intervention test.
+- Selected-rock presentation metadata is persisted in the app envelope, while the simulation snapshot remains authoritative and versioned.
+
+Causal tests run identical baseline and intervention sessions, place a rock only in the intervention, advance both by 40 fixed ticks, and require greater water depth at the obstructed cell plus lower depth in the next downstream cell. Additional coverage verifies latest-rock attribution, outlet-cell safety, accessibility, rendered tap-to-command behavior, and save/resume after interaction.
+
 ## Known limitations
 
 This is a deliberately small behavioral model, not CFD or engineering software:

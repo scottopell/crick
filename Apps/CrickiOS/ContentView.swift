@@ -11,54 +11,26 @@ struct ContentView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                Section("Authoritative state") {
-                    LabeledContent("Scenario", value: session.projection.scenarioName)
-                    LabeledContent("Tick") {
-                        Text("\(session.projection.tick)")
-                            .accessibilityIdentifier("tick-value")
-                    }
-                    LabeledContent("Water", value: session.projection.totalWater.formatted(.number.precision(.fractionLength(4))))
-                    LabeledContent("Sediment", value: session.projection.totalSediment.formatted(.number.precision(.fractionLength(4))))
-                }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    header
 
-                Section("Explicit controls") {
-                    Button("Advance 1 Tick") { session.advance(ticks: 1) }
-                        .accessibilityIdentifier("advance-one")
-                    Button("Advance 10 Ticks") { session.advance(ticks: 10) }
-                    Button("Place Rock in Cell 2") { perform { try session.placeRock() } }
-                        .accessibilityIdentifier("place-rock")
-                    Button("Load Baseline") { perform { try session.load(BuiltInScenarios.baseline) } }
-                    Button("Load Rock Scenario") { perform { try session.load(BuiltInScenarios.rock) } }
-                }
-
-                Section("Snapshot") {
-                    Button("Save") { perform { try session.save() } }
-                        .accessibilityIdentifier("save-snapshot")
-                    Button("Resume") { perform { try session.resume() } }
-                        .accessibilityIdentifier("resume-snapshot")
-                    Text(session.message)
-                        .foregroundStyle(.secondary)
-                        .accessibilityIdentifier("session-message")
-                }
-
-                Section("Diagnostics") {
-                    LabeledContent("Water residual", value: session.projection.waterResidual.formatted())
-                    LabeledContent("Sediment residual", value: session.projection.sedimentResidual.formatted())
-                    LabeledContent("Violations", value: "\(session.projection.violations.count)")
-                        .accessibilityIdentifier("violation-count")
-                }
-
-                Section("Cells") {
-                    ForEach(session.projection.cells) { cell in
-                        VStack(alignment: .leading) {
-                            Text("Cell \(cell.id)").font(.headline)
-                            Text("depth \(cell.waterDepth.formatted(.number.precision(.fractionLength(3)))) · bed \(cell.bedElevation.formatted(.number.precision(.fractionLength(3))))")
-                            Text("sediment \(cell.suspendedSediment.formatted(.number.precision(.fractionLength(4)))) · rock \(cell.rockResistance.formatted(.number.precision(.fractionLength(1))))")
-                                .foregroundStyle(.secondary)
+                    CreekCrossSection(
+                        projection: session.projection,
+                        placeRock: { cell in
+                            perform { try session.placeRock(cell: cell) }
                         }
+                    )
+
+                    if let effect = session.projection.rockEffect {
+                        RockEffectCard(effect: effect)
                     }
+
+                    controls
+                    diagnostics
+                    snapshotControls
                 }
+                .padding()
             }
             .navigationTitle("Crick Lab")
             .alert("Error", isPresented: Binding(
@@ -70,6 +42,88 @@ struct ContentView: View {
                 Text(errorMessage ?? "")
             }
         }
+    }
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Label(session.projection.scenarioName, systemImage: "leaf.fill")
+                Spacer()
+                Text("Tick \(session.projection.tick)")
+                    .font(.headline.monospacedDigit())
+                    .accessibilityIdentifier("tick-value")
+            }
+            HStack {
+                metric("Water", session.projection.totalWater)
+                metric("Sediment", session.projection.totalSediment)
+            }
+        }
+    }
+
+    private var controls: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Fixed-step controls").font(.headline)
+            HStack {
+                Button("Advance 1") { session.advance(ticks: 1) }
+                    .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier("advance-one")
+                Button("Advance 10") { session.advance(ticks: 10) }
+                    .buttonStyle(.bordered)
+                    .accessibilityIdentifier("advance-ten")
+                Spacer()
+                Menu("Scenario") {
+                    Button("Baseline") {
+                        perform { try session.load(BuiltInScenarios.baseline) }
+                    }
+                    Button("Rock fixture") {
+                        perform { try session.load(BuiltInScenarios.rock) }
+                    }
+                    Button("Flood fixture") {
+                        perform { try session.load(BuiltInScenarios.flood) }
+                    }
+                }
+            }
+            Text("Nothing advances unless you press an Advance button.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(12)
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    private var diagnostics: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Diagnostics").font(.headline)
+            LabeledContent("Water residual", value: session.projection.waterResidual.formatted())
+            LabeledContent("Sediment residual", value: session.projection.sedimentResidual.formatted())
+            LabeledContent("Violations", value: "\(session.projection.violations.count)")
+                .accessibilityIdentifier("violation-count")
+        }
+    }
+
+    private var snapshotControls: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Snapshot").font(.headline)
+            HStack {
+                Button("Save") { perform { try session.save() } }
+                    .accessibilityIdentifier("save-snapshot")
+                Button("Resume") { perform { try session.resume() } }
+                    .accessibilityIdentifier("resume-snapshot")
+            }
+            .buttonStyle(.bordered)
+            Text(session.message)
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("session-message")
+        }
+    }
+
+    private func metric(_ name: String, _ value: Double) -> some View {
+        VStack(alignment: .leading) {
+            Text(name).font(.caption).foregroundStyle(.secondary)
+            Text(value.formatted(.number.precision(.fractionLength(4))))
+                .font(.body.monospacedDigit())
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func perform(_ action: () throws -> Void) {

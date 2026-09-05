@@ -267,6 +267,11 @@ func strictCommandLine() throws {
     #expect(throws: CommandLineError.invalidTickCount("-1")) {
         _ = try CommandLineRequest.parse(["resume", "save.json", "--ticks", "-1"])
     }
+    #expect(throws: CommandLineError.self) {
+        _ = try CommandLineRequest.parse([
+            "run", "baseline", "--json", "out", "--csv", "./out",
+        ])
+    }
     let parsed = try CommandLineRequest.parse([
         "run", "rock", "--csv", "cells.csv", "--json", "result.json",
     ])

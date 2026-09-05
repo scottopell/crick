@@ -1,3 +1,5 @@
+import Foundation
+
 public enum CommandLineError: Error, Equatable, Sendable {
     case missingCommand
     case unknownCommand(String)
@@ -7,6 +9,7 @@ public enum CommandLineError: Error, Equatable, Sendable {
     case missingOptionValue(String)
     case unknownScenario(String)
     case invalidTickCount(String)
+    case collidingArtifactPaths(String)
 }
 
 public struct RunRequest: Equatable, Sendable {
@@ -48,6 +51,7 @@ public enum CommandLineRequest: Equatable, Sendable {
                 Array(arguments.dropFirst(2)),
                 allowed: ["--json", "--csv", "--snapshot"]
             )
+            try rejectPathCollisions(options)
             return .run(RunRequest(
                 scenario: scenario,
                 jsonPath: options["--json"],
@@ -75,6 +79,18 @@ public enum CommandLineRequest: Equatable, Sendable {
             ))
         default:
             throw CommandLineError.unknownCommand(command)
+        }
+    }
+
+    private static func rejectPathCollisions(
+        _ options: [String: String]
+    ) throws {
+        var seen: Set<String> = []
+        for path in options.values {
+            let normalized = URL(fileURLWithPath: path).standardizedFileURL.path
+            guard seen.insert(normalized).inserted else {
+                throw CommandLineError.collidingArtifactPaths(normalized)
+            }
         }
     }
 

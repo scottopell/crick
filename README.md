@@ -32,7 +32,7 @@ swift test
 
 Each scenario prints its ending tick, water and sediment inventories, conservation residuals, and invariant-violation count. JSON evidence contains the complete scenario definition, initial state, tick-indexed commands, final state, and diagnostics. CSV exports final per-cell values.
 
-The CLI rejects unknown commands/options, extra positional arguments, duplicate options, missing option values, unknown scenarios, and invalid tick counts with usage on stderr and exit status 2. Artifact writes atomically replace individual destination files; a command requesting several artifacts is not a multi-file transaction.
+The CLI reports and rejects unknown commands/options, extra positional arguments, duplicate options, missing option values, unknown scenarios, invalid tick counts, and normalized artifact-path collisions with usage on stderr and exit status 2. Artifact writes atomically replace individual destination files; a command requesting several artifacts is not a multi-file transaction.
 
 GitHub Actions independently runs the build, executable, and tests with Swift 6.3.3 on Linux. Local commands are the development feedback loop; CI is a verification gate.
 

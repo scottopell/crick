@@ -70,7 +70,8 @@ do {
         }
         printSummary(name: "resumed", simulator: simulator)
     }
-} catch is CommandLineError {
+} catch let error as CommandLineError {
+    FileHandle.standardError.write(Data("error: \(error)\n".utf8))
     usage()
 } catch {
     FileHandle.standardError.write(Data("error: \(error)\n".utf8))

@@ -12,12 +12,14 @@ public struct SimulationSnapshot: Codable, Equatable, Sendable {
 
     public var schemaVersion: Int
     public var simulationVersion: Int
+    public var determinismCompatibilityID: String
     public var state: WorldState
     public var commandLog: [ScheduledCommand]
 
     public init(simulator: Simulator) {
         self.schemaVersion = Self.currentSchemaVersion
         self.simulationVersion = WorldState.simulationVersion
+        self.determinismCompatibilityID = DeterminismGuarantee.compatibilityID
         self.state = simulator.state
         self.commandLog = simulator.commandLog
     }
@@ -26,15 +28,15 @@ public struct SimulationSnapshot: Codable, Equatable, Sendable {
         guard schemaVersion == Self.currentSchemaVersion else {
             throw SnapshotError.unsupportedSchema(found: schemaVersion)
         }
-        guard simulationVersion == WorldState.simulationVersion else {
+        guard simulationVersion == WorldState.simulationVersion,
+              determinismCompatibilityID == DeterminismGuarantee.compatibilityID else {
             throw SnapshotError.unsupportedSimulation(found: simulationVersion)
         }
-        let simulator = Simulator(state: state, commandLog: commandLog)
-        let violations = simulator.diagnostics().violations
-        guard violations.isEmpty else {
+        do {
+            return try Simulator(state: state, commandLog: commandLog)
+        } catch let StateError.invalid(violations) {
             throw SnapshotError.invalidState(violations: violations)
         }
-        return simulator
     }
 }
 
@@ -72,7 +74,7 @@ public struct ScenarioDefinition: Codable, Equatable, Sendable {
     }
 
     public func run() throws -> Simulator {
-        var simulator = Simulator(state: initialState)
+        var simulator = try Simulator(state: initialState)
         try simulator.run(until: endTick, commands: commands)
         return simulator
     }
@@ -145,6 +147,7 @@ public enum BuiltInScenarios {
 public struct ScenarioResult: Codable, Equatable, Sendable {
     public var scenario: ScenarioDefinition
     public var determinismGuarantee: String
+    public var determinismCompatibilityID: String
     public var fixedStepSeconds: Double
     public var state: WorldState
     public var diagnostics: SimulationDiagnostics
@@ -152,6 +155,7 @@ public struct ScenarioResult: Codable, Equatable, Sendable {
     public init(scenario: ScenarioDefinition, simulator: Simulator) {
         self.scenario = scenario
         self.determinismGuarantee = DeterminismGuarantee.text
+        self.determinismCompatibilityID = DeterminismGuarantee.compatibilityID
         self.fixedStepSeconds = Simulator.fixedStepSeconds
         self.state = simulator.state
         self.diagnostics = simulator.diagnostics()

@@ -8,14 +8,16 @@
 /// - Cross-build and cross-architecture bit-identical floating-point replay is
 ///   not promised. Snapshots declare their schema and simulation versions.
 public enum DeterminismGuarantee {
-    public static let text = "Exact replay within the same Crick build and platform"
+    /// Bump whenever authoritative stepping semantics change incompatibly.
+    public static let compatibilityID = "crick-sim-v1"
+    public static let text = "Exact replay within the same determinism compatibility ID and platform"
 }
 
 public struct Cell: Codable, Equatable, Sendable {
-    public var bedElevation: Double
-    public var waterDepth: Double
-    public var suspendedSediment: Double
-    public var rockResistance: Double
+    public internal(set) var bedElevation: Double
+    public internal(set) var waterDepth: Double
+    public internal(set) var suspendedSediment: Double
+    public internal(set) var rockResistance: Double
 
     public init(
         bedElevation: Double,
@@ -31,8 +33,8 @@ public struct Cell: Codable, Equatable, Sendable {
 }
 
 public struct BoundaryForcing: Codable, Equatable, Sendable {
-    public var waterPerTick: Double
-    public var sedimentPerTick: Double
+    public internal(set) var waterPerTick: Double
+    public internal(set) var sedimentPerTick: Double
 
     public init(waterPerTick: Double, sedimentPerTick: Double = 0) {
         self.waterPerTick = waterPerTick
@@ -41,14 +43,14 @@ public struct BoundaryForcing: Codable, Equatable, Sendable {
 }
 
 public struct MaterialLedger: Codable, Equatable, Sendable {
-    public var initialWater: Double
-    public var waterIn: Double
-    public var waterOut: Double
-    public var initialSediment: Double
-    public var sedimentIn: Double
-    public var sedimentOut: Double
-    public var playerSedimentAdded: Double
-    public var playerSedimentRemoved: Double
+    public internal(set) var initialWater: Double
+    public internal(set) var waterIn: Double
+    public internal(set) var waterOut: Double
+    public internal(set) var initialSediment: Double
+    public internal(set) var sedimentIn: Double
+    public internal(set) var sedimentOut: Double
+    public internal(set) var playerSedimentAdded: Double
+    public internal(set) var playerSedimentRemoved: Double
 
     public init(initialWater: Double, initialSediment: Double) {
         self.initialWater = initialWater
@@ -65,11 +67,11 @@ public struct MaterialLedger: Codable, Equatable, Sendable {
 public struct WorldState: Codable, Equatable, Sendable {
     public static let simulationVersion = 1
 
-    public var tick: UInt64
-    public var seed: UInt64
-    public var cells: [Cell]
-    public var forcing: BoundaryForcing
-    public var ledger: MaterialLedger
+    public internal(set) var tick: UInt64
+    public internal(set) var seed: UInt64
+    public internal(set) var cells: [Cell]
+    public internal(set) var forcing: BoundaryForcing
+    public internal(set) var ledger: MaterialLedger
 
     public init(seed: UInt64, cells: [Cell], forcing: BoundaryForcing) {
         precondition(cells.count >= 2, "A reach requires at least two cells")
@@ -112,12 +114,17 @@ public struct ScheduledCommand: Codable, Equatable, Sendable {
 }
 
 public enum CommandError: Error, Equatable, Sendable {
+    case targetInPast(currentTick: UInt64, targetTick: UInt64)
     case commandInPast(currentTick: UInt64, commandTick: UInt64)
     case commandInFuture(currentTick: UInt64, commandTick: UInt64)
     case commandBeyondTarget(targetTick: UInt64, commandTick: UInt64)
     case invalidCell(Int)
     case invalidAmount
     case insufficientSediment
+}
+
+public enum StateError: Error, Equatable, Sendable {
+    case invalid(violations: [String])
 }
 
 public struct BalanceReport: Codable, Equatable, Sendable {
@@ -155,15 +162,35 @@ public struct Simulator: Sendable {
     public private(set) var commandLog: [ScheduledCommand]
     public private(set) var lastTickDiagnostics: TickDiagnostics?
 
-    public init(state: WorldState, commandLog: [ScheduledCommand] = []) {
+    public init(state: WorldState, commandLog: [ScheduledCommand] = []) throws {
         self.state = state
         self.commandLog = commandLog
         self.lastTickDiagnostics = nil
+        let violations = diagnostics().violations
+        guard violations.isEmpty else {
+            throw StateError.invalid(violations: violations)
+        }
     }
 
     public mutating func run(
         until targetTick: UInt64,
         commands: [ScheduledCommand] = []
+    ) throws {
+        guard targetTick >= state.tick else {
+            throw CommandError.targetInPast(
+                currentTick: state.tick,
+                targetTick: targetTick
+            )
+        }
+        // A failed schedule is atomic: validate and execute against a value copy.
+        var candidate = self
+        try candidate.runValidated(until: targetTick, commands: commands)
+        self = candidate
+    }
+
+    private mutating func runValidated(
+        until targetTick: UInt64,
+        commands: [ScheduledCommand]
     ) throws {
         if let command = commands.first(where: { $0.tick < state.tick }) {
             throw CommandError.commandInPast(
@@ -265,9 +292,18 @@ public struct Simulator: Sendable {
             sedimentResidual: state.totalSediment - expectedSediment
         )
         var violations: [String] = []
+        if state.cells.count < 2 {
+            violations.append("A reach requires at least two cells")
+        }
+        if !state.forcing.waterPerTick.isFinite
+            || !state.forcing.sedimentPerTick.isFinite
+            || state.forcing.waterPerTick < 0
+            || state.forcing.sedimentPerTick < 0 {
+            violations.append("Boundary forcing is invalid")
+        }
         if state.cells.contains(where: {
             !$0.waterDepth.isFinite || !$0.bedElevation.isFinite
-                || !$0.suspendedSediment.isFinite
+                || !$0.suspendedSediment.isFinite || !$0.rockResistance.isFinite
         }) {
             violations.append("State contains a non-finite value")
         }
@@ -277,10 +313,29 @@ public struct Simulator: Sendable {
         }) {
             violations.append("State contains a negative inventory")
         }
-        if abs(report.waterResidual) > Self.balanceTolerance {
+        if state.cells.contains(where: {
+            $0.rockResistance < 0 || $0.rockResistance > 1
+        }) {
+            violations.append("Rock resistance is outside zero through one")
+        }
+        let ledgerValues = [
+            state.ledger.initialWater, state.ledger.waterIn,
+            state.ledger.waterOut, state.ledger.initialSediment,
+            state.ledger.sedimentIn, state.ledger.sedimentOut,
+            state.ledger.playerSedimentAdded,
+            state.ledger.playerSedimentRemoved,
+        ]
+        if ledgerValues.contains(where: { !$0.isFinite || $0 < 0 }) {
+            violations.append("Material ledger is invalid")
+        }
+        let waterTolerance = Self.balanceTolerance
+            * max(1, abs(report.expectedWater))
+        let sedimentTolerance = Self.balanceTolerance
+            * max(1, abs(report.expectedSediment))
+        if abs(report.waterResidual) > waterTolerance {
             violations.append("Water balance residual exceeds tolerance")
         }
-        if abs(report.sedimentResidual) > Self.balanceTolerance {
+        if abs(report.sedimentResidual) > sedimentTolerance {
             violations.append("Sediment balance residual exceeds tolerance")
         }
         return SimulationDiagnostics(

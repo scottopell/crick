@@ -32,6 +32,8 @@ swift test
 
 Each scenario prints its ending tick, water and sediment inventories, conservation residuals, and invariant-violation count. JSON evidence contains the complete scenario definition, initial state, tick-indexed commands, final state, and diagnostics. CSV exports final per-cell values.
 
+The CLI rejects unknown commands/options, extra positional arguments, duplicate options, missing option values, unknown scenarios, and invalid tick counts with usage on stderr and exit status 2. Artifact writes atomically replace individual destination files; a command requesting several artifacts is not a multi-file transaction.
+
 GitHub Actions independently runs the build, executable, and tests with Swift 6.3.3 on Linux. Local commands are the development feedback loop; CI is a verification gate.
 
 ## Simulation contract
@@ -40,13 +42,13 @@ GitHub Actions independently runs the build, executable, and tests with Swift 6.
 
 At the start of each tick, boundary water and sediment enter the upstream cell. Transfers are calculated in stable cell order from the pre-tick state, then sediment erodes or deposits according to local transport capacity, and water and suspended sediment may leave through the downstream boundary. Every external transfer is accumulated in a material ledger.
 
-Commands carry an explicit tick. Commands sharing a tick execute in caller order before that tick advances. Invalid cells, quantities, and past/future direct application are rejected without mutating the world.
+Commands carry an explicit tick. Commands sharing a tick execute in caller order before that tick advances. Invalid cells, quantities, past targets, past/future direct application, and schedules extending beyond their target are rejected. A scheduled run is transactional: if any command fails, no ticks or earlier commands from that run are committed.
 
 ### Determinism guarantee
 
-The same supported Crick build and platform, initial state or snapshot, and ordered command sequence produce exactly equal authoritative states. The core uses fixed ticks, stable array traversal, and no wall clock, file I/O, global random state, or unordered collection traversal.
+The same determinism compatibility ID and platform, initial state or snapshot, and ordered command sequence produce exactly equal authoritative states. The current compatibility ID is `crick-sim-v1`. It must change when authoritative stepping semantics change incompatibly. The core uses fixed ticks, stable array traversal, and no wall clock, file I/O, global random state, or unordered collection traversal.
 
-Cross-build and cross-architecture bit-identical floating-point replay is **not** guaranteed. Snapshots therefore contain both schema and simulation versions and reject unsupported versions.
+Cross-compatibility-ID and cross-architecture bit-identical floating-point replay is **not** guaranteed. Snapshots therefore contain schema, simulation, and determinism compatibility versions and reject unsupported values or invalid authoritative state.
 
 ## Current evidence
 
@@ -56,7 +58,7 @@ Built-in fixtures provide:
 - `rock`: a tick-indexed obstruction that creates measurable upstream backwater
 - `flood`: a bounded high-flow pulse that causes persistent, conserved bed change
 
-Tests cover exact replay, fixed-step partitioning, command order and rejection, water and sediment budgets, non-negative finite state, snapshot round-trip/version rejection, save/resume equivalence, scenario behavior, and JSON/CSV diagnostics.
+Tests cover exact replay, fixed-step partitioning, atomic command scheduling and rejection, water and sediment budgets, dry and extreme-flow states, non-negative finite state, snapshot round-trip/version/compatibility rejection, repeated save/resume equivalence, scenario behavior, strict CLI parsing, and JSON/CSV diagnostics. Conservation uses a relative tolerance of `1e-9 × max(1, expected inventory)` so diagnostics remain meaningful across scenario scales.
 
 ## Known limitations
 

@@ -14,9 +14,9 @@ func exactReplay() throws {
 }
 
 @Test("Fixed-step batching is equivalent to individual ticks")
-func fixedStepPartitioning() {
-    var batched = Simulator(state: BuiltInScenarios.baseline.initialState)
-    var individual = Simulator(state: BuiltInScenarios.baseline.initialState)
+func fixedStepPartitioning() throws {
+    var batched = try Simulator(state: BuiltInScenarios.baseline.initialState)
+    var individual = try Simulator(state: BuiltInScenarios.baseline.initialState)
 
     batched.step(count: 50)
     for _ in 0..<50 { individual.step() }
@@ -27,7 +27,7 @@ func fixedStepPartitioning() {
 
 @Test("Commands execute at their declared tick in stable order")
 func tickIndexedCommands() throws {
-    var simulator = Simulator(state: BuiltInScenarios.baseline.initialState)
+    var simulator = try Simulator(state: BuiltInScenarios.baseline.initialState)
     let commands = [
         ScheduledCommand(tick: 5, command: .placeRock(cell: 2, resistance: 0.3)),
         ScheduledCommand(tick: 5, command: .placeRock(cell: 2, resistance: 0.8)),
@@ -41,7 +41,7 @@ func tickIndexedCommands() throws {
 
 @Test("Commands reject invalid time, cells, and quantities")
 func invalidCommands() throws {
-    var simulator = Simulator(state: BuiltInScenarios.baseline.initialState)
+    var simulator = try Simulator(state: BuiltInScenarios.baseline.initialState)
 
     #expect(throws: CommandError.commandInFuture(currentTick: 0, commandTick: 1)) {
         try simulator.apply(ScheduledCommand(tick: 1, command: .removeRock(cell: 0)))
@@ -62,8 +62,8 @@ func invalidCommands() throws {
 }
 
 @Test("A run rejects commands beyond its target tick")
-func commandBeyondTarget() {
-    var simulator = Simulator(state: BuiltInScenarios.baseline.initialState)
+func commandBeyondTarget() throws {
+    var simulator = try Simulator(state: BuiltInScenarios.baseline.initialState)
 
     #expect(throws: CommandError.commandBeyondTarget(
         targetTick: 5,
@@ -76,6 +76,43 @@ func commandBeyondTarget() {
     }
     #expect(simulator.state.tick == 0)
     #expect(simulator.commandLog.isEmpty)
+}
+
+@Test("Past targets and failing schedules do not mutate state")
+func atomicScheduleFailure() throws {
+    var simulator = try Simulator(state: BuiltInScenarios.baseline.initialState)
+    simulator.step(count: 4)
+    let before = simulator
+
+    #expect(throws: CommandError.targetInPast(currentTick: 4, targetTick: 3)) {
+        try simulator.run(until: 3)
+    }
+    #expect(simulator.state == before.state)
+
+    #expect(throws: CommandError.insufficientSediment) {
+        try simulator.run(until: 8, commands: [
+            ScheduledCommand(tick: 5, command: .placeRock(cell: 2, resistance: 0.5)),
+            ScheduledCommand(tick: 7, command: .excavate(cell: 1, sediment: 100)),
+        ])
+    }
+    #expect(simulator.state == before.state)
+    #expect(simulator.commandLog == before.commandLog)
+}
+
+@Test("Initial invalid state is rejected before stepping")
+func invalidInitialState() {
+    let invalid = WorldState(
+        seed: 1,
+        cells: [
+            Cell(bedElevation: 1, waterDepth: 0, rockResistance: 2),
+            Cell(bedElevation: 0, waterDepth: 0),
+        ],
+        forcing: BoundaryForcing(waterPerTick: .infinity)
+    )
+
+    #expect(throws: StateError.self) {
+        _ = try Simulator(state: invalid)
+    }
 }
 
 @Test("Water and sediment account for boundaries and player excavation")
@@ -98,8 +135,8 @@ func conservation() throws {
 }
 
 @Test("Conservation remains bounded over a long accelerated run")
-func longRunConservation() {
-    var simulator = Simulator(state: BuiltInScenarios.baseline.initialState)
+func longRunConservation() throws {
+    var simulator = try Simulator(state: BuiltInScenarios.baseline.initialState)
     simulator.step(count: 10_000)
     let diagnostics = simulator.diagnostics()
 
@@ -136,7 +173,14 @@ func snapshotVersionRejection() throws {
 func corruptSnapshotRejection() throws {
     let simulator = try BuiltInScenarios.baseline.run()
     var snapshot = SimulationSnapshot(simulator: simulator)
-    snapshot.state.cells[0].waterDepth = -1
+    snapshot.state = WorldState(
+        seed: 42,
+        cells: [
+            Cell(bedElevation: 1, waterDepth: -1),
+            Cell(bedElevation: 0, waterDepth: 0),
+        ],
+        forcing: BoundaryForcing(waterPerTick: 0)
+    )
 
     #expect(throws: SnapshotError.self) {
         _ = try snapshot.restore()
@@ -145,10 +189,10 @@ func corruptSnapshotRejection() throws {
 
 @Test("Save and resume equals uninterrupted advancement")
 func saveResumeEquivalence() throws {
-    var uninterrupted = Simulator(state: BuiltInScenarios.baseline.initialState)
+    var uninterrupted = try Simulator(state: BuiltInScenarios.baseline.initialState)
     uninterrupted.step(count: 120)
 
-    var firstSession = Simulator(state: BuiltInScenarios.baseline.initialState)
+    var firstSession = try Simulator(state: BuiltInScenarios.baseline.initialState)
     firstSession.step(count: 45)
     let data = try SnapshotCodec.encode(SimulationSnapshot(simulator: firstSession))
     var resumed = try SnapshotCodec.decode(data).restore()
@@ -156,6 +200,83 @@ func saveResumeEquivalence() throws {
 
     #expect(resumed.state == uninterrupted.state)
     #expect(resumed.diagnostics() == uninterrupted.diagnostics())
+}
+
+@Test("Repeated serialization boundaries equal uninterrupted advancement")
+func repeatedResumeEquivalence() throws {
+    var uninterrupted = try Simulator(state: BuiltInScenarios.baseline.initialState)
+    uninterrupted.step(count: 120)
+
+    var resumed = try Simulator(state: BuiltInScenarios.baseline.initialState)
+    for _ in 0..<3 {
+        resumed.step(count: 40)
+        let data = try SnapshotCodec.encode(SimulationSnapshot(simulator: resumed))
+        resumed = try SnapshotCodec.decode(data).restore()
+    }
+
+    #expect(resumed.state == uninterrupted.state)
+}
+
+@Test("Snapshot rejects incompatible determinism contract")
+func incompatibleDeterminismContract() throws {
+    let simulator = try BuiltInScenarios.baseline.run()
+    var snapshot = SimulationSnapshot(simulator: simulator)
+    snapshot.determinismCompatibilityID = "other-build"
+
+    #expect(throws: SnapshotError.self) {
+        _ = try snapshot.restore()
+    }
+}
+
+@Test("Dry and extreme-flow states remain finite and conserved")
+func dryAndExtremeFlow() throws {
+    let dry = WorldState(
+        seed: 7,
+        cells: [
+            Cell(bedElevation: 1, waterDepth: 0),
+            Cell(bedElevation: 0, waterDepth: 0),
+        ],
+        forcing: BoundaryForcing(waterPerTick: 0)
+    )
+    var drySimulator = try Simulator(state: dry)
+    drySimulator.step(count: 1_000)
+    #expect(drySimulator.diagnostics().violations.isEmpty)
+
+    var flood = try Simulator(state: BuiltInScenarios.baseline.initialState)
+    try flood.apply(ScheduledCommand(
+        tick: 0,
+        command: .setForcing(waterPerTick: 1_000_000, sedimentPerTick: 10_000)
+    ))
+    flood.step(count: 1_000)
+    #expect(flood.diagnostics().violations.isEmpty)
+}
+
+@Test("CLI parser rejects ambiguous and malformed invocations")
+func strictCommandLine() throws {
+    #expect(throws: CommandLineError.duplicateOption("--json")) {
+        _ = try CommandLineRequest.parse([
+            "run", "baseline", "--json", "a", "--json", "b",
+        ])
+    }
+    #expect(throws: CommandLineError.missingOptionValue("--json")) {
+        _ = try CommandLineRequest.parse(["run", "baseline", "--json"])
+    }
+    #expect(throws: CommandLineError.unknownOption("extra")) {
+        _ = try CommandLineRequest.parse(["run", "baseline", "extra"])
+    }
+    #expect(throws: CommandLineError.invalidTickCount("-1")) {
+        _ = try CommandLineRequest.parse(["resume", "save.json", "--ticks", "-1"])
+    }
+    let parsed = try CommandLineRequest.parse([
+        "run", "rock", "--csv", "cells.csv", "--json", "result.json",
+    ])
+    guard case let .run(request) = parsed else {
+        Issue.record("Expected a run request")
+        return
+    }
+    #expect(request.scenario.name == "rock")
+    #expect(request.csvPath == "cells.csv")
+    #expect(request.jsonPath == "result.json")
 }
 
 @Test("An obstruction creates measurable upstream backwater")

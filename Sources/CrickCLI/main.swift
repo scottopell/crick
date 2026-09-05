@@ -13,12 +13,6 @@ func usage() -> Never {
     exit(2)
 }
 
-func value(after option: String, in arguments: [String]) -> String? {
-    guard let index = arguments.firstIndex(of: option),
-          arguments.indices.contains(index + 1) else { return nil }
-    return arguments[index + 1]
-}
-
 func write(_ data: Data, to path: String) throws {
     try data.write(to: URL(fileURLWithPath: path), options: .atomic)
 }
@@ -36,48 +30,48 @@ func printSummary(name: String, simulator: Simulator) {
 
 let arguments = Array(CommandLine.arguments.dropFirst())
 do {
-    guard let command = arguments.first else { usage() }
-    switch command {
-    case "list":
+    switch try CommandLineRequest.parse(arguments) {
+    case .list:
         for scenario in BuiltInScenarios.all {
             print("\(scenario.name)\t\(scenario.summary)")
         }
-    case "run":
-        guard arguments.count >= 2,
-              let scenario = BuiltInScenarios.named(arguments[1]) else { usage() }
-        let simulator = try scenario.run()
-        let result = ScenarioResult(scenario: scenario, simulator: simulator)
-        if let path = value(after: "--json", in: arguments) {
+    case let .run(request):
+        let simulator = try request.scenario.run()
+        let result = ScenarioResult(
+            scenario: request.scenario,
+            simulator: simulator
+        )
+        if let path = request.jsonPath {
             try write(DiagnosticExporter.json(result), to: path)
         }
-        if let path = value(after: "--csv", in: arguments) {
-            try write(Data(DiagnosticExporter.cellsCSV(simulator.state).utf8), to: path)
+        if let path = request.csvPath {
+            try write(
+                Data(DiagnosticExporter.cellsCSV(simulator.state).utf8),
+                to: path
+            )
         }
-        if let path = value(after: "--snapshot", in: arguments) {
+        if let path = request.snapshotPath {
             try write(
                 SnapshotCodec.encode(SimulationSnapshot(simulator: simulator)),
                 to: path
             )
         }
-        printSummary(name: scenario.name, simulator: simulator)
-    case "resume":
-        guard arguments.count >= 2,
-              let tickText = value(after: "--ticks", in: arguments),
-              let tickCount = UInt64(tickText) else { usage() }
-        let data = try Data(contentsOf: URL(fileURLWithPath: arguments[1]))
+        printSummary(name: request.scenario.name, simulator: simulator)
+    case let .resume(request):
+        let data = try Data(contentsOf: URL(fileURLWithPath: request.snapshotPath))
         let snapshot = try SnapshotCodec.decode(data)
         var simulator = try snapshot.restore()
-        simulator.step(count: tickCount)
-        if let path = value(after: "--snapshot", in: arguments) {
+        simulator.step(count: request.tickCount)
+        if let path = request.outputSnapshotPath {
             try write(
                 SnapshotCodec.encode(SimulationSnapshot(simulator: simulator)),
                 to: path
             )
         }
         printSummary(name: "resumed", simulator: simulator)
-    default:
-        usage()
     }
+} catch is CommandLineError {
+    usage()
 } catch {
     FileHandle.standardError.write(Data("error: \(error)\n".utf8))
     exit(1)

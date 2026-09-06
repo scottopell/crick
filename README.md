@@ -46,7 +46,7 @@ Commands carry an explicit tick. Commands sharing a tick execute in caller order
 
 ### Determinism guarantee
 
-The same determinism compatibility ID and platform, initial state or snapshot, and ordered command sequence produce exactly equal authoritative states. The current compatibility ID is `crick-sim-v3`. It must change when authoritative stepping semantics change incompatibly. The core uses fixed ticks, stable array traversal, and no wall clock, file I/O, global random state, or unordered collection traversal.
+The same determinism compatibility ID and platform, initial state or snapshot, and ordered command sequence produce exactly equal authoritative states. The current compatibility ID is `crick-sim-v4`. It must change when authoritative stepping semantics change incompatibly. The core uses fixed ticks, stable array traversal, and no wall clock, file I/O, global random state, or unordered collection traversal.
 
 Cross-compatibility-ID and cross-architecture bit-identical floating-point replay is **not** guaranteed. Snapshots therefore contain schema, simulation, and determinism compatibility versions and reject unsupported values or invalid authoritative state.
 
@@ -94,6 +94,12 @@ App-layer unit tests prove explicit tick counts, command routing, immutable proj
 The player surface is a custom MetalKit viewport under a fixed authored camera. Six authoritative cells are hidden sample stations along one curved creek centerline; smooth bank, gravel, and water ribbons project their state without exposing a grid. Water width derives from authoritative depth, placed stone location derives from resistance, and screen-space picking resolves to the nearest authored station before sending a tick-indexed intent.
 
 A cosmetic shader clock animates only water glints. It is not an input to `SimulationSession`, objective evaluation, persistence, or replay. Xcode 26 requires its matching optional Metal toolchain (`xcodebuild -downloadComponent MetalToolchain`); iOS CI installs it before building.
+
+The playable interaction begins with one stone on the near bank. A pan gesture visually lifts and moves that renderer-owned preview; releasing over the creek resolves the nearest authored station and submits one authoritative `moveRock` command. Invalid releases snap back to the last authoritative location. A named “Choose a spot” menu provides the same intents without spatial dragging.
+
+“Let the water work” advances exactly 20 fixed ticks. The renderer eases water width toward the new authoritative depths over 0.7 seconds, but interpolation and haptics are cosmetic and never persisted. The player-facing objective text comes only from `PoolObjectiveResult`. Detailed conservation data and save/resume live in Field Notes rather than the main game surface.
+
+Visual tuning remains projection-only: water depth controls width, color, and opacity; bank/gravel layers and stone shadows create depth; and an in-world ring marks the desired pool function. The canonical test places the stone below that ring, proving the goal marker is not a prescribed placement slot. Render geometry uses an `MTLBuffer` rather than transient constant bytes and validates the Swift/Metal vertex stride before pipeline creation; failure produces a visible accessible fallback instead of a blank viewport.
 
 ## Physical-device and TestFlight checklist
 

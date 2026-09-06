@@ -19,9 +19,9 @@ struct CreekSceneView: UIViewRepresentable {
         view.isPaused = false
         view.delegate = context.coordinator.renderer
         context.coordinator.renderer.attach(to: view)
-        let gesture = UITapGestureRecognizer(
+        let gesture = UIPanGestureRecognizer(
             target: context.coordinator,
-            action: #selector(Coordinator.tapped(_:))
+            action: #selector(Coordinator.dragged(_:))
         )
         view.addGestureRecognizer(gesture)
         context.coordinator.view = view
@@ -50,20 +50,57 @@ struct CreekSceneView: UIViewRepresentable {
             renderer.update(projection: projection)
         }
 
-        @objc func tapped(_ gesture: UITapGestureRecognizer) {
+        @objc func dragged(_ gesture: UIPanGestureRecognizer) {
             guard let view, cellCount > 0 else { return }
             let point = gesture.location(in: view)
-            guard let cell = CreekPicking.cell(
-                at: point,
-                viewport: view.bounds.size,
-                cellCount: cellCount
-            ) else { return }
-            onPlaceStone(cell)
+            switch gesture.state {
+            case .began:
+                guard CreekPicking.isNearStone(
+                    point: point,
+                    viewport: view.bounds.size,
+                    projection: renderer.projection
+                ) else { return }
+                renderer.beginDrag(at: point, viewport: view.bounds.size)
+                UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
+            case .changed:
+                guard renderer.isDragging else { return }
+                renderer.moveDrag(to: point, viewport: view.bounds.size)
+            case .ended:
+                guard renderer.isDragging else { return }
+                renderer.endDrag()
+                guard let cell = CreekPicking.cell(
+                    at: point,
+                    viewport: view.bounds.size,
+                    cellCount: cellCount
+                ) else { return }
+                onPlaceStone(cell)
+                UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+            default:
+                renderer.endDrag()
+            }
         }
     }
 }
 
 enum CreekPicking {
+    static let bankStone = SIMD2<Float>(-0.68, -0.72)
+
+    static func isNearStone(
+        point: CGPoint,
+        viewport: CGSize,
+        projection: SimulationProjection?
+    ) -> Bool {
+        guard viewport.width > 0, viewport.height > 0 else { return false }
+        let scenePoint = SIMD2<Float>(
+            Float(point.x / viewport.width) * 2 - 1,
+            1 - Float(point.y / viewport.height) * 2
+        )
+        let placed = projection?.cells.first(where: { $0.rockResistance > 0 })
+        let stone = placed.map { CreekLayout.anchors(count: projection!.cells.count)[$0.id] }
+            ?? bankStone
+        return distance(scenePoint, stone) < 0.25
+    }
+
     static func cell(
         at point: CGPoint,
         viewport: CGSize,
@@ -96,9 +133,18 @@ final class CreekRenderer: NSObject, MTKViewDelegate {
     private var queue: MTLCommandQueue?
     private var pipeline: MTLRenderPipelineState?
     private var vertices: [CreekVertex] = []
+    private var vertexBuffer: MTLBuffer?
+    private weak var view: MTKView?
+    private(set) var projection: SimulationProjection?
+    private(set) var isDragging = false
+    private var dragPosition: SIMD2<Float>?
+    private var priorDepths: [Double] = []
+    private var targetDepths: [Double] = []
+    private var transitionStarted = CACurrentMediaTime()
     private let started = CACurrentMediaTime()
 
     func attach(to view: MTKView) {
+        self.view = view
         guard MemoryLayout<CreekVertex>.stride == 48 else {
             showFailure(in: view)
             return
@@ -144,26 +190,78 @@ final class CreekRenderer: NSObject, MTKViewDelegate {
     }
 
     func update(projection: SimulationProjection) {
-        vertices = CreekMesh.make(projection: projection)
+        let incoming = projection.cells.map(\.waterDepth)
+        if targetDepths.isEmpty {
+            priorDepths = incoming
+        } else if incoming != targetDepths {
+            priorDepths = displayedDepths(at: CACurrentMediaTime())
+            transitionStarted = CACurrentMediaTime()
+        }
+        targetDepths = incoming
+        self.projection = projection
+        rebuild()
+    }
+
+    func beginDrag(at point: CGPoint, viewport: CGSize) {
+        isDragging = true
+        moveDrag(to: point, viewport: viewport)
+    }
+
+    func moveDrag(to point: CGPoint, viewport: CGSize) {
+        dragPosition = SIMD2(
+            Float(point.x / viewport.width) * 2 - 1,
+            1 - Float(point.y / viewport.height) * 2
+        )
+        rebuild()
+    }
+
+    func endDrag() {
+        isDragging = false
+        dragPosition = nil
+        rebuild()
+    }
+
+    private func rebuild() {
+        guard let projection else { return }
+        vertices = CreekMesh.make(
+            projection: projection,
+            displayedDepths: displayedDepths(at: CACurrentMediaTime()),
+            draggedStone: dragPosition
+        )
+        guard let device = view?.device else { return }
+        vertexBuffer = device.makeBuffer(
+            bytes: vertices,
+            length: MemoryLayout<CreekVertex>.stride * vertices.count,
+            options: .storageModeShared
+        )
+    }
+
+    private func displayedDepths(at now: CFTimeInterval) -> [Double] {
+        guard priorDepths.count == targetDepths.count else { return targetDepths }
+        let raw = min(1, max(0, (now - transitionStarted) / 0.7))
+        let eased = 1 - pow(1 - raw, 3)
+        return zip(priorDepths, targetDepths).map { prior, target in
+            prior + (target - prior) * eased
+        }
     }
 
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {}
 
     func draw(in view: MTKView) {
+        if CACurrentMediaTime() - transitionStarted < 0.7 {
+            rebuild()
+        }
         guard let pipeline, let queue,
               let drawable = view.currentDrawable,
               let pass = view.currentRenderPassDescriptor,
               !vertices.isEmpty,
+              let vertexBuffer,
               let command = queue.makeCommandBuffer(),
               let encoder = command.makeRenderCommandEncoder(descriptor: pass) else {
             return
         }
         encoder.setRenderPipelineState(pipeline)
-        encoder.setVertexBytes(
-            vertices,
-            length: MemoryLayout<CreekVertex>.stride * vertices.count,
-            index: 0
-        )
+        encoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
         var time = Float(CACurrentMediaTime() - started)
         encoder.setFragmentBytes(&time, length: MemoryLayout<Float>.size, index: 0)
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: vertices.count)
@@ -186,15 +284,18 @@ enum CreekLayout {
 }
 
 private enum CreekMesh {
-    static func make(projection: SimulationProjection) -> [CreekVertex] {
+    static func make(
+        projection: SimulationProjection,
+        displayedDepths: [Double]? = nil,
+        draggedStone: SIMD2<Float>? = nil
+    ) -> [CreekVertex] {
         guard !projection.cells.isEmpty else { return [] }
         var result: [CreekVertex] = []
         let anchors = CreekLayout.anchors(count: projection.cells.count)
-        let bank = SIMD4<Float>(0.16, 0.24, 0.12, 1)
-        let dampBank = SIMD4<Float>(0.22, 0.27, 0.15, 1)
-        let gravel = SIMD4<Float>(0.45, 0.38, 0.24, 1)
-        let shallowWater = SIMD4<Float>(0.10, 0.52, 0.60, 0.72)
-        let rock = SIMD4<Float>(0.27, 0.29, 0.27, 1)
+        let bank = SIMD4<Float>(0.115, 0.205, 0.095, 1)
+        let dampBank = SIMD4<Float>(0.255, 0.315, 0.19, 1)
+        let gravel = SIMD4<Float>(0.49, 0.42, 0.27, 1)
+        let rock = SIMD4<Float>(0.20, 0.225, 0.215, 1)
 
         quad(&result, x0: -1, x1: 1, y0: -1, y1: 1, color: bank)
         ribbon(&result, points: anchors, widths: anchors.map { _ in 0.42 }, color: dampBank)
@@ -215,23 +316,58 @@ private enum CreekMesh {
             )
         }
 
-        let waterWidths = projection.cells.map {
-            0.13 + Float(min(0.34, $0.waterDepth)) * 0.42
+        let depths = displayedDepths ?? projection.cells.map(\.waterDepth)
+        let waterWidths = depths.map {
+            0.13 + Float(min(0.34, $0)) * 0.42
         }
-        ribbon(
-            &result,
-            points: anchors,
-            widths: waterWidths,
-            color: shallowWater,
-            water: 1
-        )
+        for index in 0..<(anchors.count - 1) {
+            let depth = Float((depths[index] + depths[index + 1]) * 0.5)
+            let normalizedDepth = min(1, max(0, (depth - 0.12) / 0.24))
+            let waterColor = SIMD4<Float>(
+                0.11 - normalizedDepth * 0.045,
+                0.56 - normalizedDepth * 0.12,
+                0.66 - normalizedDepth * 0.07,
+                0.69 + normalizedDepth * 0.16
+            )
+            ribbonSegment(
+                &result,
+                points: anchors,
+                widths: waterWidths,
+                index: index,
+                color: waterColor,
+                water: normalizedDepth + 0.01
+            )
+        }
 
-        for (index, cell) in projection.cells.enumerated()
-        where cell.rockResistance > 0 {
-            let shadow = anchors[index] + SIMD2<Float>(0.018, -0.025)
-            stone(&result, center: shadow, radius: 0.105, color: [0.04, 0.05, 0.04, 0.42])
-            stone(&result, center: anchors[index], radius: 0.10, color: rock)
+        let targetCell = projection.poolObjective?.targetCell
+        if let targetCell, anchors.indices.contains(targetCell) {
+            let holding = projection.poolObjective?.status == .holding
+            ring(
+                &result,
+                center: anchors[targetCell],
+                radius: 0.16,
+                color: holding
+                    ? SIMD4<Float>(0.48, 0.92, 0.70, 0.48)
+                    : SIMD4<Float>(0.90, 0.82, 0.45, 0.28)
+            )
         }
+
+        let placedIndex = projection.cells.firstIndex { $0.rockResistance > 0 }
+        let authoritativeStone = placedIndex.map { anchors[$0] }
+        let stonePosition = draggedStone
+            ?? authoritativeStone
+            ?? CreekPicking.bankStone
+        if placedIndex == nil {
+            ring(
+                &result,
+                center: stonePosition,
+                radius: 0.16,
+                color: [0.82, 0.90, 0.72, 0.22]
+            )
+        }
+        let shadow = stonePosition + SIMD2<Float>(0.026, -0.035)
+        stone(&result, center: shadow, radius: 0.12, color: [0.02, 0.03, 0.02, 0.58])
+        stone(&result, center: stonePosition, radius: 0.11, color: rock)
         return result
     }
 
@@ -255,6 +391,49 @@ private enum CreekMesh {
             let c = points[index + 1] - nextPerpendicular * widths[index + 1]
             let d = points[index + 1] + nextPerpendicular * widths[index + 1]
             polygonQuad(&vertices, a, b, c, d, color: color, water: water)
+        }
+    }
+
+    private static func ribbonSegment(
+        _ vertices: inout [CreekVertex],
+        points: [SIMD2<Float>], widths: [Float], index: Int,
+        color: SIMD4<Float>, water: Float
+    ) {
+        let direction = simd_normalize(points[index + 1] - points[index])
+        let perpendicular = SIMD2(-direction.y, direction.x)
+        let nextDirection = index + 2 < points.count
+            ? simd_normalize(points[index + 2] - points[index + 1])
+            : direction
+        let nextPerpendicular = SIMD2(-nextDirection.y, nextDirection.x)
+        polygonQuad(
+            &vertices,
+            points[index] + perpendicular * widths[index],
+            points[index] - perpendicular * widths[index],
+            points[index + 1] - nextPerpendicular * widths[index + 1],
+            points[index + 1] + nextPerpendicular * widths[index + 1],
+            color: color,
+            water: water
+        )
+    }
+
+    private static func ring(
+        _ vertices: inout [CreekVertex],
+        center: SIMD2<Float>, radius: Float, color: SIMD4<Float>
+    ) {
+        let segments = 24
+        let inner = radius * 0.83
+        for index in 0..<segments {
+            let a0 = Float(index) / Float(segments) * .pi * 2
+            let a1 = Float(index + 1) / Float(segments) * .pi * 2
+            polygonQuad(
+                &vertices,
+                center + SIMD2(cos(a0), sin(a0)) * inner,
+                center + SIMD2(cos(a0), sin(a0)) * radius,
+                center + SIMD2(cos(a1), sin(a1)) * radius,
+                center + SIMD2(cos(a1), sin(a1)) * inner,
+                color: color,
+                water: 0
+            )
         }
     }
 

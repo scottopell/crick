@@ -21,6 +21,7 @@ struct RockEffectProjection: Equatable {
 }
 
 struct PoolObjectiveProjection: Equatable {
+    let targetCell: Int
     let status: PoolObjectiveStatus
     let progressTicks: UInt64
     let requiredTicks: UInt64
@@ -247,6 +248,7 @@ final class SimulationSession {
             rockEffect: nil,
             poolObjective: simulator.state.poolObjectiveResult.map {
                 PoolObjectiveProjection(
+                    targetCell: simulator.state.poolObjective!.targetCell,
                     status: $0.status,
                     progressTicks: $0.progressTicks,
                     requiredTicks: $0.requiredTicks,

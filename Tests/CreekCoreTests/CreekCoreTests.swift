@@ -1,4 +1,4 @@
-import CreekCore
+@testable import CreekCore
 import CreekRunner
 import Foundation
 import Testing
@@ -289,13 +289,30 @@ func poolObjectiveSuccess() throws {
     var simulator = try Simulator(state: BuiltInScenarios.shapeTheBend.initialState)
     try simulator.apply(ScheduledCommand(
         tick: 0,
-        command: .moveRock(from: nil, to: 2, resistance: 0.8)
+        command: .moveRock(from: nil, to: 3, resistance: 0.8)
     ))
     simulator.step(count: 40)
 
     #expect(simulator.state.poolObjectiveResult?.status == .holding)
     #expect(simulator.state.poolObjectiveResult?.progressTicks == 5)
     #expect(simulator.diagnostics().violations.isEmpty)
+}
+
+@Test("Water-work batches make legible progress toward the pool")
+func poolObjectiveCadence() throws {
+    var simulator = try Simulator(state: BuiltInScenarios.shapeTheBend.initialState)
+    try simulator.apply(ScheduledCommand(
+        tick: 0,
+        command: .moveRock(from: nil, to: 3, resistance: 0.8)
+    ))
+
+    simulator.step(count: 10)
+    let halfway = simulator.state.poolObjectiveResult!
+    simulator.step(count: 10)
+    let complete = simulator.state.poolObjectiveResult!
+
+    #expect(halfway.status != .holding)
+    #expect(complete.status == .holding)
 }
 
 @Test("The pool does not succeed without the intervention")
@@ -366,6 +383,24 @@ func poolPlacementOutcomes() throws {
         .deepButQuick,
         .deepButQuick,
     ])
+}
+
+@Test("Restore rejects completed objective progress with stale conditions")
+func staleObjectiveProgressIsInvalid() throws {
+    var simulator = try Simulator(state: BuiltInScenarios.shapeTheBend.initialState)
+    try simulator.apply(ScheduledCommand(
+        tick: 0,
+        command: .moveRock(from: nil, to: 3, resistance: 0.8)
+    ))
+    simulator.step(count: 20)
+    #expect(simulator.state.poolObjectiveResult?.status == .holding)
+
+    var snapshot = SimulationSnapshot(simulator: simulator)
+    snapshot.state.cells[2].waterDepth = 0
+
+    #expect(throws: SnapshotError.self) {
+        _ = try snapshot.restore()
+    }
 }
 
 @Test("An obstruction creates measurable upstream backwater")

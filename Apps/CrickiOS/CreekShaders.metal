@@ -32,11 +32,13 @@ fragment float4 creekFragment(
     constant float &time [[buffer(0)]]
 ) {
     float4 color = input.color;
-    if (input.water > 0.5) {
-        float ripple = sin(input.world.x * 42.0 - time * 2.4)
-            * cos(input.world.y * 31.0 + time * 1.2);
-        float glint = smoothstep(0.55, 0.95, ripple) * 0.10;
-        color.rgb += glint;
+    if (input.water > 0.0) {
+        float ripple = sin(input.world.x * 34.0 - time * 2.4)
+            * cos(input.world.y * 27.0 + time * 1.2);
+        float glint = smoothstep(0.62, 0.96, ripple)
+            * mix(0.13, 0.055, input.water);
+        float edgeLight = 0.035 * (1.0 - input.water);
+        color.rgb += glint + edgeLight;
     }
     return color;
 }

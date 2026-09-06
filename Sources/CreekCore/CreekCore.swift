@@ -9,7 +9,7 @@
 ///   not promised. Snapshots declare their schema and simulation versions.
 public enum DeterminismGuarantee {
     /// Bump whenever authoritative stepping semantics change incompatibly.
-    public static let compatibilityID = "crick-sim-v3"
+    public static let compatibilityID = "crick-sim-v4"
     public static let text = "Exact replay within the same determinism compatibility ID and platform"
 }
 
@@ -99,7 +99,7 @@ public struct PoolObjectiveResult: Codable, Equatable, Sendable {
 }
 
 public struct WorldState: Codable, Equatable, Sendable {
-    public static let simulationVersion = 3
+    public static let simulationVersion = 4
 
     public internal(set) var tick: UInt64
     public internal(set) var seed: UInt64
@@ -151,7 +151,8 @@ public struct WorldState: Codable, Equatable, Sendable {
         let status: PoolObjectiveStatus
         if tick == 0 || lastTransfers.isEmpty {
             status = .gathering
-        } else if poolObjectiveProgress >= objective.requiredTicks {
+        } else if depthMet && flowMet
+                    && poolObjectiveProgress >= objective.requiredTicks {
             status = .holding
         } else if depthMet && !flowMet {
             status = .deepButQuick
@@ -389,6 +390,10 @@ public struct Simulator: Sendable {
             }
             if state.poolObjectiveProgress > objective.requiredTicks {
                 violations.append("Pool objective progress is invalid")
+            }
+            if state.poolObjectiveProgress >= objective.requiredTicks,
+               state.poolObjectiveResult?.status != .holding {
+                violations.append("Completed pool progress does not match current conditions")
             }
         } else if state.poolObjectiveProgress != 0 {
             violations.append("Pool progress exists without an objective")

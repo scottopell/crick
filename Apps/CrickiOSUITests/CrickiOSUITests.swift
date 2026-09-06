@@ -10,16 +10,32 @@ final class CrickiOSUITests: XCTestCase {
         XCTAssertTrue(scene.waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["objective-message"].label.contains("gather"))
         XCTAssertTrue(app.staticTexts["placement-prompt"].exists)
+        XCTAssertTrue(app.buttons["choose-stone-position"].exists)
 
         let waterWork = app.buttons["let-water-work"]
         XCTAssertFalse(waterWork.isEnabled)
-        scene.coordinate(withNormalizedOffset: CGVector(dx: 0.42, dy: 0.36)).tap()
+        let bankStone = scene.coordinate(
+            withNormalizedOffset: CGVector(dx: 0.16, dy: 0.86)
+        )
+        let insideBend = scene.coordinate(
+            withNormalizedOffset: CGVector(dx: 0.59, dy: 0.50)
+        )
+        bankStone.press(forDuration: 0.15, thenDragTo: insideBend)
         XCTAssertTrue(waterWork.isEnabled)
 
         waterWork.tap()
-        XCTAssertFalse(app.staticTexts["objective-message"].label.contains("Find a place"))
+        XCTAssertEqual(
+            app.staticTexts["objective-message"].label,
+            "A calm pool is holding."
+        )
+        let completedCreek = XCTAttachment(screenshot: app.screenshot())
+        completedCreek.name = "Shape the Bend — holding pool"
+        completedCreek.lifetime = .keepAlways
+        add(completedCreek)
 
         app.buttons["field-notes"].tap()
+        let tick = app.staticTexts["authoritative-tick"]
+        XCTAssertEqual(tick.label, "Fixed ticks, 20")
         let save = app.buttons["save-snapshot"]
         XCTAssertTrue(save.waitForExistence(timeout: 3))
         save.tap()
@@ -29,8 +45,6 @@ final class CrickiOSUITests: XCTestCase {
         waterWork.tap()
         app.buttons["field-notes"].tap()
         app.buttons["resume-snapshot"].tap()
-        XCTAssertEqual(app.staticTexts.matching(
-            NSPredicate(format: "label CONTAINS '20'")
-        ).count > 0, true)
+        XCTAssertEqual(app.staticTexts["authoritative-tick"].label, "Fixed ticks, 20")
     }
 }

@@ -23,7 +23,7 @@ struct ContentView: View {
                     }
                 )
                 .accessibilityIdentifier("creek-scene")
-                .accessibilityLabel("Creek bend from upstream left to downstream right. Tap the water to place the stone.")
+                .accessibilityLabel("Creek bend from upstream left to downstream right. Drag the bank stone into the water.")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 actionBar
             }
@@ -40,6 +40,10 @@ struct ContentView: View {
         } message: {
             Text(errorMessage ?? "")
         }
+        .sensoryFeedback(
+            .success,
+            trigger: session.projection.poolObjective?.status == .holding
+        )
     }
 
     private var header: some View {
@@ -76,7 +80,7 @@ struct ContentView: View {
     private var actionBar: some View {
         VStack(spacing: 9) {
             if session.projection.cells.allSatisfy({ $0.rockResistance == 0 }) {
-                Label("Tap the water to place your stone", systemImage: "hand.tap.fill")
+                Label("Drag the bank stone into the creek", systemImage: "hand.draw.fill")
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.white.opacity(0.82))
                     .accessibilityIdentifier("placement-prompt")
@@ -84,6 +88,14 @@ struct ContentView: View {
                 Text("The stone is set. Watch what the water does.")
                     .font(.subheadline)
                     .foregroundStyle(.white.opacity(0.76))
+            }
+            HStack {
+                Text(session.projection.cells.allSatisfy({ $0.rockResistance == 0 })
+                    ? "Lift the stone from the lower bank." : "Drag the stone again to try another place.")
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.58))
+                Spacer()
+                placementMenu
             }
             Button {
                 session.advance(ticks: 20)
@@ -102,6 +114,31 @@ struct ContentView: View {
         .padding(.top, 10)
         .padding(.bottom, 12)
         .background(.ultraThinMaterial)
+    }
+
+    private var placementMenu: some View {
+        Menu("Choose a spot") {
+            ForEach(0..<session.projection.cells.count, id: \.self) { cell in
+                Button(placementName(cell)) {
+                    perform { try session.placeRock(cell: cell) }
+                }
+                .accessibilityIdentifier("place-stone-\(cell)")
+            }
+        }
+        .font(.caption.weight(.semibold))
+        .accessibilityHint("Alternative to dragging the stone")
+        .accessibilityIdentifier("choose-stone-position")
+    }
+
+    private func placementName(_ cell: Int) -> String {
+        switch cell {
+        case 0: "Upstream entrance"
+        case 1: "Above the bend"
+        case 2: "Inside the bend"
+        case 3: "Below the bend"
+        case 4: "Lower run"
+        default: "Downstream exit"
+        }
     }
 
     private var objectiveMessage: String {
@@ -135,7 +172,10 @@ private struct FieldNotesView: View {
         NavigationStack {
             List {
                 Section("Creek") {
-                    LabeledContent("Fixed ticks", value: "\(session.projection.tick)")
+                    LabeledContent("Fixed ticks") {
+                        Text("\(session.projection.tick)")
+                            .accessibilityIdentifier("authoritative-tick")
+                    }
                     LabeledContent("Water", value: session.projection.totalWater.formatted())
                     LabeledContent("Sediment", value: session.projection.totalSediment.formatted())
                 }

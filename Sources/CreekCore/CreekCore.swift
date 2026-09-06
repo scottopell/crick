@@ -9,7 +9,7 @@
 ///   not promised. Snapshots declare their schema and simulation versions.
 public enum DeterminismGuarantee {
     /// Bump whenever authoritative stepping semantics change incompatibly.
-    public static let compatibilityID = "crick-sim-v2"
+    public static let compatibilityID = "crick-sim-v3"
     public static let text = "Exact replay within the same determinism compatibility ID and platform"
 }
 
@@ -99,7 +99,7 @@ public struct PoolObjectiveResult: Codable, Equatable, Sendable {
 }
 
 public struct WorldState: Codable, Equatable, Sendable {
-    public static let simulationVersion = 2
+    public static let simulationVersion = 3
 
     public internal(set) var tick: UInt64
     public internal(set) var seed: UInt64
@@ -149,7 +149,9 @@ public struct WorldState: Codable, Equatable, Sendable {
         let depthMet = depth >= objective.minimumDepth
         let flowMet = transfer <= objective.maximumTransfer
         let status: PoolObjectiveStatus
-        if poolObjectiveProgress >= objective.requiredTicks {
+        if tick == 0 || lastTransfers.isEmpty {
+            status = .gathering
+        } else if poolObjectiveProgress >= objective.requiredTicks {
             status = .holding
         } else if depthMet && !flowMet {
             status = .deepButQuick

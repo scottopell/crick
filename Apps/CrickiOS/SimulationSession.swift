@@ -20,6 +20,23 @@ struct RockEffectProjection: Equatable {
     let flowPastRock: Double?
 }
 
+struct PoolObjectiveProjection: Equatable {
+    let status: PoolObjectiveStatus
+    let progressTicks: UInt64
+    let requiredTicks: UInt64
+    let depth: Double
+    let transfer: Double
+
+    var title: String {
+        switch status {
+        case .gathering: "The bend is still finding its shape"
+        case .deepButQuick: "Deeper, but the current is still quick"
+        case .calmButShallow: "Calmer, but the pool needs more depth"
+        case .holding: "A calm pool is holding"
+        }
+    }
+}
+
 struct SimulationProjection: Equatable {
     let scenarioName: String
     let tick: UInt64
@@ -31,6 +48,7 @@ struct SimulationProjection: Equatable {
     let waterTransfers: [Double]
     let cells: [CellProjection]
     let rockEffect: RockEffectProjection?
+    let poolObjective: PoolObjectiveProjection?
 }
 
 protocol SnapshotStoring {
@@ -93,7 +111,7 @@ final class SimulationSession {
     private(set) var canResume: Bool
 
     init(
-        scenario: ScenarioDefinition = BuiltInScenarios.baseline,
+        scenario: ScenarioDefinition = BuiltInScenarios.shapeTheBend,
         snapshotStore: any SnapshotStoring
     ) throws {
         let simulator = try Simulator(state: scenario.initialState)
@@ -124,7 +142,11 @@ final class SimulationSession {
     func placeRock(cell: Int = 2, resistance: Double = 0.8) throws {
         try simulator.apply(ScheduledCommand(
             tick: simulator.state.tick,
-            command: .placeRock(cell: cell, resistance: resistance)
+            command: .moveRock(
+                from: selectedRockCell,
+                to: cell,
+                resistance: resistance
+            )
         ))
         selectedRockCell = cell
         refresh()
@@ -192,7 +214,8 @@ final class SimulationSession {
                     flowPastRock: updated.waterTransfers.indices.contains(rock.id)
                         ? updated.waterTransfers[rock.id]
                         : nil
-                )
+                ),
+                poolObjective: updated.poolObjective
             )
         }
         projection = updated
@@ -221,7 +244,16 @@ final class SimulationSession {
                     rockResistance: cell.rockResistance
                 )
             },
-            rockEffect: nil
+            rockEffect: nil,
+            poolObjective: simulator.state.poolObjectiveResult.map {
+                PoolObjectiveProjection(
+                    status: $0.status,
+                    progressTicks: $0.progressTicks,
+                    requiredTicks: $0.requiredTicks,
+                    depth: $0.depth,
+                    transfer: $0.transfer
+                )
+            }
         )
     }
 }

@@ -46,7 +46,7 @@ Commands carry an explicit tick. Commands sharing a tick execute in caller order
 
 ### Determinism guarantee
 
-The same determinism compatibility ID and platform, initial state or snapshot, and ordered command sequence produce exactly equal authoritative states. The current compatibility ID is `crick-sim-v2`. It must change when authoritative stepping semantics change incompatibly. The core uses fixed ticks, stable array traversal, and no wall clock, file I/O, global random state, or unordered collection traversal.
+The same determinism compatibility ID and platform, initial state or snapshot, and ordered command sequence produce exactly equal authoritative states. The current compatibility ID is `crick-sim-v3`. It must change when authoritative stepping semantics change incompatibly. The core uses fixed ticks, stable array traversal, and no wall clock, file I/O, global random state, or unordered collection traversal.
 
 Cross-compatibility-ID and cross-architecture bit-identical floating-point replay is **not** guaranteed. Snapshots therefore contain schema, simulation, and determinism compatibility versions and reject unsupported values or invalid authoritative state.
 
@@ -89,19 +89,11 @@ The app is a projection and intent adapter, not a second simulation:
 
 App-layer unit tests prove explicit tick counts, command routing, immutable projection updates, and snapshot recovery. An XCUITest drives the rendered controls through advance, rock placement, save, further advancement, and restoration. GitHub's macOS job regenerates the project and builds the app for a generic simulator; simulator tests run locally because hosted simulator availability varies.
 
-### Interactive creek cross-section
+### Metal creek viewport
 
-The native lab renders every authoritative cell as a creek cross-section from upstream to downstream:
+The player surface is a custom MetalKit viewport under a fixed authored camera. Six authoritative cells are hidden sample stations along one curved creek centerline; smooth bank, gravel, and water ribbons project their state without exposing a grid. Water width derives from authoritative depth, placed stone location derives from resistance, and screen-space picking resolves to the nearest authored station before sending a tick-indexed intent.
 
-- Brown bed height projects `bedElevation`; blue water height projects `waterDepth`.
-- Per-boundary arrows project the most recent authoritative water transfers.
-- Plus markers communicate tappable empty cells; rock markers project non-zero resistance.
-- Tapping a cell sends `ScheduledCommand(tick: currentTick, command: .placeRock(...))` through `SimulationSession`; the view never edits cell data.
-- Explicit one- and ten-tick controls are the only advancement path.
-- After advancement, a presentation card reports observed depth changes around the most recently selected rock and flow past it. It is intentionally labeled as observation over the last fixed-tick batch; causal proof comes from the control-versus-intervention test.
-- Selected-rock presentation metadata is persisted in the app envelope, while the simulation snapshot remains authoritative and versioned.
-
-Causal tests run identical baseline and intervention sessions, place a rock only in the intervention, advance both by 40 fixed ticks, and require greater water depth at the obstructed cell plus lower depth in the next downstream cell. Additional coverage verifies latest-rock attribution, outlet-cell safety, accessibility, rendered tap-to-command behavior, and save/resume after interaction.
+A cosmetic shader clock animates only water glints. It is not an input to `SimulationSession`, objective evaluation, persistence, or replay. Xcode 26 requires its matching optional Metal toolchain (`xcodebuild -downloadComponent MetalToolchain`); iOS CI installs it before building.
 
 ## Physical-device and TestFlight checklist
 

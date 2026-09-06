@@ -19,6 +19,39 @@ private final class MemorySnapshotStore: SnapshotStoring {
     }
 }
 
+@Test("Metal creek picking maps authored anchors to authoritative cells")
+func creekPicking() {
+    let viewport = CGSize(width: 390, height: 600)
+    let anchors = CreekLayout.anchors(count: 6)
+
+    for (index, anchor) in anchors.enumerated() {
+        let point = CGPoint(
+            x: CGFloat((anchor.x + 1) * 0.5) * viewport.width,
+            y: CGFloat((1 - anchor.y) * 0.5) * viewport.height
+        )
+        #expect(CreekPicking.cell(
+            at: point,
+            viewport: viewport,
+            cellCount: 6
+        ) == index)
+    }
+    #expect(CreekPicking.cell(
+        at: CGPoint(x: viewport.width / 2, y: 0),
+        viewport: viewport,
+        cellCount: 6
+    ) == nil)
+}
+
+@MainActor
+@Test("Game session starts with authoritative unticked objective")
+func gameSessionStart() throws {
+    let session = try SimulationSession(snapshotStore: MemorySnapshotStore())
+
+    #expect(session.projection.scenarioName == "shape-the-bend")
+    #expect(session.projection.tick == 0)
+    #expect(session.projection.poolObjective?.status == .gathering)
+}
+
 @MainActor
 @Test("Resume is unavailable until a snapshot exists")
 func resumeAvailability() throws {

@@ -4,162 +4,166 @@ import SwiftUI
 struct ContentView: View {
     @State private var session: SimulationSession
     @State private var errorMessage: String?
+    @State private var showFieldNotes = false
 
     init(session: SimulationSession) {
         _session = State(initialValue: session)
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    header
-                    firstUseGuide
-                    controls
-
-                    CreekCrossSection(
-                        projection: session.projection,
-                        placeRock: { cell in
-                            perform { try session.placeRock(cell: cell) }
-                        }
-                    )
-
-                    if let effect = session.projection.rockEffect {
-                        RockEffectCard(effect: effect)
+        ZStack {
+            Color(red: 0.055, green: 0.085, blue: 0.06)
+                .ignoresSafeArea()
+            VStack(spacing: 0) {
+                header
+                CreekSceneView(
+                    projection: session.projection,
+                    onPlaceStone: { cell in
+                        perform { try session.placeRock(cell: cell) }
                     }
-
-                    diagnostics
-                    snapshotControls
-                }
-                .padding()
+                )
+                .accessibilityIdentifier("creek-scene")
+                .accessibilityLabel("Creek bend from upstream left to downstream right. Tap the water to place the stone.")
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                actionBar
             }
-            .navigationTitle("Crick Lab")
-            .alert("Error", isPresented: Binding(
-                get: { errorMessage != nil },
-                set: { if !$0 { errorMessage = nil } }
-            )) {
-                Button("OK", role: .cancel) { errorMessage = nil }
-            } message: {
-                Text(errorMessage ?? "")
-            }
+        }
+        .preferredColorScheme(.dark)
+        .sheet(isPresented: $showFieldNotes) {
+            FieldNotesView(session: session)
+        }
+        .alert("The creek is unchanged", isPresented: Binding(
+            get: { errorMessage != nil },
+            set: { if !$0 { errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { errorMessage = nil }
+        } message: {
+            Text(errorMessage ?? "")
         }
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Label(session.projection.scenarioName, systemImage: "leaf.fill")
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("SHAPE THE BEND")
+                        .font(.caption.weight(.bold))
+                        .tracking(1.4)
+                        .foregroundStyle(.mint)
+                    Text("Make a calm pool at the bend")
+                        .font(.title2.weight(.semibold))
+                }
                 Spacer()
-                Text("Tick \(session.projection.tick)")
-                    .font(.headline.monospacedDigit())
-                    .accessibilityIdentifier("tick-value")
+                Button {
+                    showFieldNotes = true
+                } label: {
+                    Image(systemName: "ellipsis.circle.fill")
+                        .font(.title2)
+                }
+                .accessibilityLabel("Open field notes")
+                .accessibilityIdentifier("field-notes")
             }
-            HStack {
-                metric("Water", session.projection.totalWater)
-                metric("Sediment", session.projection.totalSediment)
+            Text(objectiveMessage)
+                .font(.subheadline)
+                .foregroundStyle(.white.opacity(0.72))
+                .accessibilityIdentifier("objective-message")
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 12)
+        .background(.black.opacity(0.24))
+    }
+
+    private var actionBar: some View {
+        VStack(spacing: 9) {
+            if session.projection.cells.allSatisfy({ $0.rockResistance == 0 }) {
+                Label("Tap the water to place your stone", systemImage: "hand.tap.fill")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.white.opacity(0.82))
+                    .accessibilityIdentifier("placement-prompt")
+            } else {
+                Text("The stone is set. Watch what the water does.")
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.76))
             }
+            Button {
+                session.advance(ticks: 20)
+            } label: {
+                Label("Let the water work", systemImage: "water.waves")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 6)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.cyan.opacity(0.78))
+            .accessibilityIdentifier("let-water-work")
+            .disabled(session.projection.cells.allSatisfy { $0.rockResistance == 0 })
+        }
+        .padding(.horizontal, 18)
+        .padding(.top, 10)
+        .padding(.bottom, 12)
+        .background(.ultraThinMaterial)
+    }
+
+    private var objectiveMessage: String {
+        guard let objective = session.projection.poolObjective else {
+            return "Read the current, place one stone, and observe."
+        }
+        switch objective.status {
+        case .gathering:
+            return "Find a place where water can gather and slow."
+        case .deepButQuick:
+            return "A deeper pocket is forming, but the current is still quick."
+        case .calmButShallow:
+            return "The current softened, but the pool needs more depth."
+        case .holding:
+            return "A calm pool is holding."
         }
     }
 
-    private var firstUseGuide: some View {
-        HStack(spacing: 12) {
-            Label("1. Tap a +", systemImage: "plus.circle.fill")
-            Image(systemName: "arrow.right")
-                .foregroundStyle(.secondary)
-            Label("2. Advance", systemImage: "forward.fill")
+    private func perform(_ action: () throws -> Void) {
+        do { try action() } catch {
+            errorMessage = "That stone could not be placed."
         }
-        .font(.subheadline.weight(.semibold))
-        .padding(12)
-        .frame(maxWidth: .infinity)
-        .background(.green.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("First, tap a plus in the creek to place a rock. Second, press Advance to run fixed ticks.")
-        .accessibilityIdentifier("first-use-guide")
     }
+}
 
-    private var controls: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Fixed-step controls").font(.headline)
-            HStack {
-                Button("Advance 1") { session.advance(ticks: 1) }
-                    .buttonStyle(.borderedProminent)
-                    .accessibilityIdentifier("advance-one")
-                Button("Advance 10") { session.advance(ticks: 10) }
-                    .buttonStyle(.bordered)
-                    .accessibilityIdentifier("advance-ten")
-                Spacer()
-                Menu("Scenario") {
-                    Button("Baseline") {
-                        perform { try session.load(BuiltInScenarios.baseline) }
+private struct FieldNotesView: View {
+    let session: SimulationSession
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section("Creek") {
+                    LabeledContent("Fixed ticks", value: "\(session.projection.tick)")
+                    LabeledContent("Water", value: session.projection.totalWater.formatted())
+                    LabeledContent("Sediment", value: session.projection.totalSediment.formatted())
+                }
+                Section("Conservation") {
+                    LabeledContent("Water residual", value: session.projection.waterResidual.formatted())
+                    LabeledContent("Sediment residual", value: session.projection.sedimentResidual.formatted())
+                    LabeledContent("Violations", value: "\(session.projection.violations.count)")
+                }
+                Section("This creek") {
+                    Button("Save this moment") {
+                        try? session.save()
                     }
-                    Button("Rock fixture") {
-                        perform { try session.load(BuiltInScenarios.rock) }
+                    .accessibilityIdentifier("save-snapshot")
+                    Button("Return to saved moment") {
+                        try? session.resume()
                     }
-                    Button("Flood fixture") {
-                        perform { try session.load(BuiltInScenarios.flood) }
+                    .disabled(!session.canResume)
+                    .accessibilityIdentifier("resume-snapshot")
+                    Button("Begin again", role: .destructive) {
+                        try? session.load(BuiltInScenarios.shapeTheBend)
+                        dismiss()
                     }
                 }
             }
-            Text("Nothing advances unless you press an Advance button.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .padding(12)
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
-    }
-
-    private var diagnostics: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Diagnostics").font(.headline)
-            LabeledContent("Water residual", value: session.projection.waterResidual.formatted())
-            LabeledContent("Sediment residual", value: session.projection.sedimentResidual.formatted())
-            LabeledContent("Violations", value: "\(session.projection.violations.count)")
-                .accessibilityIdentifier("violation-count")
-        }
-    }
-
-    private var snapshotControls: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Snapshot").font(.headline)
-            HStack {
-                Button("Save") {
-                    perform(failure: "Couldn’t save this creek.") {
-                        try session.save()
-                    }
-                }
-                .accessibilityIdentifier("save-snapshot")
-                Button("Resume") {
-                    perform(failure: "Couldn’t resume. Your current creek is unchanged.") {
-                        try session.resume()
-                    }
-                }
-                .disabled(!session.canResume)
-                .accessibilityIdentifier("resume-snapshot")
+            .navigationTitle("Field Notes")
+            .toolbar {
+                Button("Done") { dismiss() }
             }
-            .buttonStyle(.bordered)
-            Text(session.message)
-                .foregroundStyle(.secondary)
-                .accessibilityIdentifier("session-message")
-        }
-    }
-
-    private func metric(_ name: String, _ value: Double) -> some View {
-        VStack(alignment: .leading) {
-            Text(name).font(.caption).foregroundStyle(.secondary)
-            Text(value.formatted(.number.precision(.fractionLength(4))))
-                .font(.body.monospacedDigit())
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private func perform(
-        failure: String = "That change couldn’t be applied.",
-        _ action: () throws -> Void
-    ) {
-        do {
-            try action()
-        } catch {
-            errorMessage = failure
         }
     }
 }

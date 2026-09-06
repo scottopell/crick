@@ -46,7 +46,7 @@ Commands carry an explicit tick. Commands sharing a tick execute in caller order
 
 ### Determinism guarantee
 
-The same determinism compatibility ID and platform, initial state or snapshot, and ordered command sequence produce exactly equal authoritative states. The current compatibility ID is `crick-sim-v1`. It must change when authoritative stepping semantics change incompatibly. The core uses fixed ticks, stable array traversal, and no wall clock, file I/O, global random state, or unordered collection traversal.
+The same determinism compatibility ID and platform, initial state or snapshot, and ordered command sequence produce exactly equal authoritative states. The current compatibility ID is `crick-sim-v2`. It must change when authoritative stepping semantics change incompatibly. The core uses fixed ticks, stable array traversal, and no wall clock, file I/O, global random state, or unordered collection traversal.
 
 Cross-compatibility-ID and cross-architecture bit-identical floating-point replay is **not** guaranteed. Snapshots therefore contain schema, simulation, and determinism compatibility versions and reject unsupported values or invalid authoritative state.
 
@@ -59,6 +59,14 @@ Built-in fixtures provide:
 - `flood`: a bounded high-flow pulse that causes persistent, conserved bed change
 
 Tests cover exact replay, fixed-step partitioning, atomic command scheduling and rejection, water and sediment budgets, dry and extreme-flow states, non-negative finite state, snapshot round-trip/version/compatibility rejection, repeated save/resume equivalence, scenario behavior, strict CLI parsing, and JSON/CSV diagnostics. Conservation uses a relative tolerance of `1e-9 × max(1, expected inventory)` so diagnostics remain meaningful across scenario scales.
+
+## Shape the Bend gameplay contract
+
+`shape-the-bend` is the first narrow game scenario. Its authoritative objective asks the player to create a deep, calm pool at bend cell 2 and hold both conditions for five consecutive fixed ticks. Objective definition, progress, last authoritative transfers, and result are owned by `CreekCore` and persist in snapshots.
+
+The current thresholds (`0.23` minimum depth and `0.028` maximum transfer) are provisional tuning discovered from the six available stone placements at tick 40. They produce two viable choices, one calm-but-shallow near miss, and three deep-but-quick near misses. Tests lock down this useful choice shape while visual and interaction tuning proceeds; changing authoritative semantics requires a new determinism compatibility ID.
+
+A single authoritative `moveRock` command atomically removes the stone from its prior cell and places it in its destination at the command tick. Rendering, drag previews, and settle animation remain projections and cannot relocate the stone.
 
 ## Native iOS laboratory
 

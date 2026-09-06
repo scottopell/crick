@@ -164,7 +164,7 @@ func snapshotVersionRejection() throws {
     var snapshot = SimulationSnapshot(simulator: simulator)
     snapshot.schemaVersion += 1
 
-    #expect(throws: SnapshotError.unsupportedSchema(found: 2)) {
+    #expect(throws: SnapshotError.unsupportedSchema(found: 3)) {
         _ = try snapshot.restore()
     }
 }
@@ -282,6 +282,90 @@ func strictCommandLine() throws {
     #expect(request.scenario.name == "rock")
     #expect(request.csvPath == "cells.csv")
     #expect(request.jsonPath == "result.json")
+}
+
+@Test("Shape the Bend is achievable by a stone at the bend")
+func poolObjectiveSuccess() throws {
+    var simulator = try Simulator(state: BuiltInScenarios.shapeTheBend.initialState)
+    try simulator.apply(ScheduledCommand(
+        tick: 0,
+        command: .moveRock(from: nil, to: 2, resistance: 0.8)
+    ))
+    simulator.step(count: 40)
+
+    #expect(simulator.state.poolObjectiveResult?.status == .holding)
+    #expect(simulator.state.poolObjectiveResult?.progressTicks == 5)
+    #expect(simulator.diagnostics().violations.isEmpty)
+}
+
+@Test("The pool does not succeed without the intervention")
+func poolObjectiveRequiresIntervention() throws {
+    var simulator = try Simulator(state: BuiltInScenarios.shapeTheBend.initialState)
+    simulator.step(count: 40)
+
+    #expect(simulator.state.poolObjectiveResult?.status != .holding)
+}
+
+@Test("Moving the stone is atomic and survives snapshot recovery")
+func moveRockAndRecover() throws {
+    var simulator = try Simulator(state: BuiltInScenarios.shapeTheBend.initialState)
+    try simulator.apply(ScheduledCommand(
+        tick: 0,
+        command: .moveRock(from: nil, to: 1, resistance: 0.8)
+    ))
+    try simulator.apply(ScheduledCommand(
+        tick: 0,
+        command: .moveRock(from: 1, to: 2, resistance: 0.8)
+    ))
+    simulator.step(count: 20)
+    let restored = try SnapshotCodec.decode(
+        SnapshotCodec.encode(SimulationSnapshot(simulator: simulator))
+    ).restore()
+
+    #expect(restored.state.cells[1].rockResistance == 0)
+    #expect(restored.state.cells[2].rockResistance == 0.8)
+    #expect(restored.state.poolObjectiveResult == simulator.state.poolObjectiveResult)
+}
+
+@Test("A failed stone move preserves its prior authoritative location")
+func failedMoveRockIsAtomic() throws {
+    var simulator = try Simulator(state: BuiltInScenarios.shapeTheBend.initialState)
+    try simulator.apply(ScheduledCommand(
+        tick: 0,
+        command: .moveRock(from: nil, to: 1, resistance: 0.8)
+    ))
+    let before = simulator.state
+
+    #expect(throws: CommandError.invalidCell(99)) {
+        try simulator.apply(ScheduledCommand(
+            tick: 0,
+            command: .moveRock(from: 1, to: 99, resistance: 0.8)
+        ))
+    }
+    #expect(simulator.state == before)
+}
+
+@Test("Pool objective has viable choices and readable near misses")
+func poolPlacementOutcomes() throws {
+    var statuses: [PoolObjectiveStatus] = []
+    for cell in 0..<6 {
+        var simulator = try Simulator(state: BuiltInScenarios.shapeTheBend.initialState)
+        try simulator.apply(ScheduledCommand(
+            tick: 0,
+            command: .moveRock(from: nil, to: cell, resistance: 0.8)
+        ))
+        simulator.step(count: 40)
+        statuses.append(simulator.state.poolObjectiveResult!.status)
+    }
+
+    #expect(statuses == [
+        .deepButQuick,
+        .calmButShallow,
+        .holding,
+        .holding,
+        .deepButQuick,
+        .deepButQuick,
+    ])
 }
 
 @Test("An obstruction creates measurable upstream backwater")

@@ -8,7 +8,7 @@ public enum SnapshotError: Error, Equatable, Sendable {
 }
 
 public struct SimulationSnapshot: Codable, Equatable, Sendable {
-    public static let currentSchemaVersion = 1
+    public static let currentSchemaVersion = 2
 
     public var schemaVersion: Int
     public var simulationVersion: Int
@@ -81,6 +81,22 @@ public struct ScenarioDefinition: Codable, Equatable, Sendable {
 }
 
 public enum BuiltInScenarios {
+    public static let shapeTheBend = ScenarioDefinition(
+        name: "shape-the-bend",
+        summary: "Place one stone to form a calm pool at the creek bend",
+        initialState: ordinaryReach(
+            seed: 42,
+            poolObjective: PoolObjective(
+                targetCell: 2,
+                minimumDepth: 0.23,
+                maximumTransfer: 0.028,
+                requiredTicks: 5
+            )
+        ),
+        commands: [],
+        endTick: 0
+    )
+
     public static let baseline = ScenarioDefinition(
         name: "baseline",
         summary: "Ordinary flow through an unobstructed sloping reach",
@@ -119,13 +135,16 @@ public enum BuiltInScenarios {
         endTick: 80
     )
 
-    public static let all = [baseline, rock, flood]
+    public static let all = [shapeTheBend, baseline, rock, flood]
 
     public static func named(_ name: String) -> ScenarioDefinition? {
         all.first { $0.name == name }
     }
 
-    private static func ordinaryReach(seed: UInt64) -> WorldState {
+    private static func ordinaryReach(
+        seed: UInt64,
+        poolObjective: PoolObjective? = nil
+    ) -> WorldState {
         WorldState(
             seed: seed,
             cells: [
@@ -139,7 +158,8 @@ public enum BuiltInScenarios {
             forcing: BoundaryForcing(
                 waterPerTick: 0.05,
                 sedimentPerTick: 0.001
-            )
+            ),
+            poolObjective: poolObjective
         )
     }
 }

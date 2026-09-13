@@ -46,7 +46,7 @@ Commands carry an explicit tick. Commands sharing a tick execute in caller order
 
 ### Determinism guarantee
 
-The same determinism compatibility ID and platform, initial state or snapshot, and ordered command sequence produce exactly equal authoritative states. The current compatibility ID is `crick-sim-v4`. It must change when authoritative stepping semantics change incompatibly. The core uses fixed ticks, stable array traversal, and no wall clock, file I/O, global random state, or unordered collection traversal.
+The same determinism compatibility ID and platform, initial state or snapshot, and ordered command sequence produce exactly equal authoritative states. The current compatibility ID is `crick-sim-v5`. It must change when authoritative stepping semantics change incompatibly. The core uses fixed ticks, stable array traversal, and no wall clock, file I/O, global random state, or unordered collection traversal.
 
 Cross-compatibility-ID and cross-architecture bit-identical floating-point replay is **not** guaranteed. Snapshots therefore contain schema, simulation, and determinism compatibility versions and reject unsupported values or invalid authoritative state.
 
@@ -64,7 +64,7 @@ Tests cover exact replay, fixed-step partitioning, atomic command scheduling and
 
 `shape-the-bend` is the first narrow game scenario. Its authoritative objective asks the player to create a deep, calm pool at bend cell 2 and hold both conditions for five consecutive fixed ticks. Objective definition, progress, last authoritative transfers, and result are owned by `CreekCore` and persist in snapshots.
 
-The current thresholds (`0.23` minimum depth and `0.028` maximum transfer) are provisional tuning discovered from the six available stone placements at tick 40. They produce two viable choices, one calm-but-shallow near miss, and three deep-but-quick near misses. Tests lock down this useful choice shape while visual and interaction tuning proceeds; changing authoritative semantics requires a new determinism compatibility ID.
+The scenario starts from a deterministic flowing fixture rebased from 40 ordinary authoritative ticks. Calmness is the local speed proxy `transfer leaving target / target water depth`, not total discharge. Current provisional thresholds are `0.50` minimum depth and `0.060` maximum calmness. Five effective stone seats are offered; the outlet is excluded because its resistance cannot affect this solver. At the first 20-tick horizon cells 2 and 3 hold, cell 4 is deep but still quick, and cells 0 and 1 do not form the pool. Tests lock outcomes at 20, 40, and 80 ticks. Moving the stone clears stale objective evidence before the next tick; changing these semantics requires a new determinism compatibility ID.
 
 A single authoritative `moveRock` command atomically removes the stone from its prior cell and places it in its destination at the command tick. Rendering, drag previews, and settle animation remain projections and cannot relocate the stone.
 
@@ -82,52 +82,44 @@ The app is a projection and intent adapter, not a second simulation:
 
 - A `@MainActor` `SimulationSession` privately owns the only `Simulator`.
 - SwiftUI receives immutable cell and diagnostic projections; no mutable `WorldState` is exposed.
-- State changes only through explicit load, fixed-tick advance, and rock-command intents. There are no timers or wall-clock inputs.
+- State changes only through explicit load, fixed-tick experiments, and rock-command intents. Presentation time selects among already-computed immutable projections and never enters authoritative simulation.
 - `CreekCore` remains platform-neutral and performs no persistence I/O.
 - The app-layer store writes a client envelope containing scenario presentation metadata and the versioned authoritative `SimulationSnapshot`.
 - Resume replaces the private simulator only after shared snapshot decoding and invariant validation succeeds.
 
-App-layer unit tests prove explicit tick counts, command routing, immutable projection updates, and snapshot recovery. An XCUITest drives the rendered controls through advance, rock placement, save, further advancement, and restoration. GitHub's macOS job regenerates the project and builds the app for a generic simulator; simulator tests run locally because hosted simulator availability varies.
+App-layer unit tests prove exact per-tick experiment projections, effective-seat routing, evolved-reach retry, Keep closure, immutable projection updates, and snapshot recovery. An XCUITest drives a deep-but-quick near miss, moves the same stone on the evolved reach, reaches success, handles background presentation settlement, keeps the pool, and verifies the authoritative tick. GitHub's macOS job regenerates the project and builds the app for a generic simulator; simulator tests run locally because hosted simulator availability varies.
 
 ### Metal creek viewport
 
-The player surface is a custom MetalKit viewport under a fixed authored camera. Six authoritative cells are hidden sample stations along one curved creek centerline; smooth bank, gravel, and water ribbons project their state without exposing a grid. Water width derives from authoritative depth, placed stone location derives from resistance, and screen-space picking resolves to the nearest authored station before sending a tick-indexed intent.
+The player surface is a custom MetalKit viewport under a fixed authored camera. Six authoritative cells are hidden sample stations along one curved creek centerline; five effective stone seats are available without exposing a grid. Smooth bank, gravel, and water ribbons project state, water width derives monotonically from authoritative depth, and animated current cues derive from transfer/depth. Screen-space picking considers only effective unoccupied seats before sending a tick-indexed intent.
 
 A cosmetic shader clock animates only water glints. It is not an input to `SimulationSession`, objective evaluation, persistence, or replay. Xcode 26 requires its matching optional Metal toolchain (`xcodebuild -downloadComponent MetalToolchain`); iOS CI installs it before building.
 
 The playable interaction begins with one stone on the near bank. A pan gesture visually lifts and moves that renderer-owned preview; releasing over the creek resolves the nearest authored station and submits one authoritative `moveRock` command. Invalid releases snap back to the last authoritative location. A named “Choose a spot” menu provides the same intents without spatial dragging.
 
-“Let the water work” advances exactly 20 fixed ticks. The renderer eases water width toward the new authoritative depths over 0.7 seconds, but interpolation and haptics are cosmetic and never persisted. The player-facing objective text comes only from `PoolObjectiveResult`. Detailed conservation data and save/resume live in Field Notes rather than the main game surface.
+“Test this spot · 20 creek seconds” synchronously commits exactly 20 fixed ticks and captures one immutable projection after every real tick. The UI presents those projections over about three seconds; cancellation or backgrounding settles to the already-committed final projection, and Reduce Motion presents it immediately. A near miss permits moving the same stone on the evolved reach before another bounded experiment. Only authoritative success offers “Keep this pool.” The player-facing objective text comes only from `PoolObjectiveResult`; detailed conservation data and save/resume remain in Field Notes.
 
 Visual tuning remains projection-only: water depth controls width, color, and opacity; bank/gravel layers and stone shadows create depth; and an in-world ring marks the desired pool function. The canonical test places the stone below that ring, proving the goal marker is not a prescribed placement slot. Render geometry uses an `MTLBuffer` rather than transient constant bytes and validates the Swift/Metal vertex stride before pipeline creation; failure produces a visible accessible fallback instead of a blank viewport.
 
 ## Physical-device and TestFlight checklist
 
-Simulator QA is the release gate for the current slice; a phone is not required to continue development. When a physical device or TestFlight group is available, run this bounded session:
+Simulator QA proves deterministic behavior and layout, but renewed physical-device comprehension is the final product gate for this revised slice. The prior `crick-sim-v4` device session failed because the response was too subtle and lacked agency, consequence, progress, failure, and payoff. Do not claim the revision resolves that failure until fresh physical-device players complete this bounded session:
 
-- [ ] Fresh install launches to baseline tick 0 without an error or saved-state assumption.
-- [ ] The two-step guide, both Advance controls, and upstream/downstream labels are understandable before explanation.
-- [ ] Each of the six creek cells is comfortably tappable and the selected cell visibly changes from plus to rock.
-- [ ] Rock placement does not advance the tick; Advance 1 and Advance 10 change it by exactly those amounts.
-- [ ] After advancement, water pooling and downstream change are visually noticeable and the observation card names the selected rock and elapsed fixed ticks.
-- [ ] Save enables Resume; advancing and resuming returns to the saved tick, selected rock, and creek state.
+- [ ] Fresh install opens on a visibly flowing reach at player tick 0 without an error or saved-state assumption.
+- [ ] Without coaching, the player identifies the stone, marked bend, creek direction, and need for both depth and calm.
+- [ ] Dragging reveals effective landing seats and confirms the accepted position; the outlet is never offered.
+- [ ] “Test this spot · 20 creek seconds” presents perceptible depth and current changes over one bounded observation.
+- [ ] A cell-4 near miss reads as deep but quick in the creek itself, not only in result text.
+- [ ] The player moves the same stone for a stated reason, understands the evolved reach was retained, and can reach a cell-2 or cell-3 success.
+- [ ] Failure offers retry, success alone offers Keep, and neither invites meaningless repeated test taps.
+- [ ] Save/Resume preserves the selected rock, creek authority, and attempt closure without creating a second stone.
 - [ ] Missing Resume is disabled; corrupt/unreadable recovery shows useful language and preserves the current creek.
 - [ ] VoiceOver reads the guide, direction, cells in upstream-to-downstream order, controls, causal summary, diagnostics, and snapshot actions coherently.
 - [ ] Largest accessibility text, Increase Contrast, Reduce Motion, portrait, and landscape preserve reachable controls without overlap.
 - [ ] Background/foreground and process relaunch do not advance simulation or imply automatic restore.
 - [ ] Record launch responsiveness, heat, battery impact, and any unexpected signing/storage behavior on device.
 
-Top questions for first-time users:
-
-1. Without coaching, what do you think the brown, blue, plus, rock, and arrows represent?
-2. What do you expect to happen after tapping a plus? Is pressing Advance the next action you naturally choose?
-3. Can you tell which side is upstream and where water is pooling after placing a rock?
-4. Does the observed-change card help connect your intervention to the creek, or does it feel like developer data?
-5. Is the difference between Advance 1 and Advance 10 useful and predictable?
-6. What do you expect Save and Resume—and closing/reopening the app—to do?
-7. Does this interaction feel like tending a creek, or only operating a diagnostic model? What single change would improve that feeling most?
-
-Review has reached diminishing returns for simulator-only scope: fresh reviewers and direct reproduction found and closed first-use instruction placement, resume availability, recovery preservation, compact-screen execution, latest-rock attribution, and accessibility-summary issues. Remaining concerns require perception, touch, VoiceOver, and expectation evidence from people on physical hardware; expanding simulation or inventing answers in UI code would not be justified.
+Fresh-device acceptance requires at least 5/6 players to complete one test and correctly explain both the depth and current change, at least 5/6 to identify success or the missed condition without Field Notes, and at least 4/6 to choose a retry location for a stated causal reason. No more than 1/6 should repeat the test because the first run felt unfinished. If players can read the result text but cannot point to matching creek evidence, the revised thesis has failed; progression or broader simulation is not an acceptable substitute.
 
 ## Known limitations
 

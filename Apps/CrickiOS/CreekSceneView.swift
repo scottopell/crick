@@ -3,7 +3,9 @@ import SwiftUI
 
 struct CreekSceneView: UIViewRepresentable {
     let projection: SimulationProjection
-    let onPlaceStone: (Int) -> Void
+    let eligibleStoneCells: [Int]
+    let allowsDragging: Bool
+    let onPlaceStone: (Int) -> Bool
 
     func makeCoordinator() -> Coordinator {
         Coordinator(onPlaceStone: onPlaceStone)
@@ -25,12 +27,16 @@ struct CreekSceneView: UIViewRepresentable {
         )
         view.addGestureRecognizer(gesture)
         context.coordinator.view = view
+        context.coordinator.eligibleStoneCells = eligibleStoneCells
+        context.coordinator.allowsDragging = allowsDragging
         context.coordinator.update(projection: projection)
         return view
     }
 
     func updateUIView(_ view: MTKView, context: Context) {
         context.coordinator.onPlaceStone = onPlaceStone
+        context.coordinator.eligibleStoneCells = eligibleStoneCells
+        context.coordinator.allowsDragging = allowsDragging
         context.coordinator.update(projection: projection)
     }
 
@@ -38,10 +44,14 @@ struct CreekSceneView: UIViewRepresentable {
     final class Coordinator: NSObject {
         let renderer = CreekRenderer()
         weak var view: MTKView?
-        var onPlaceStone: (Int) -> Void
+        var onPlaceStone: (Int) -> Bool
+        var eligibleStoneCells: [Int] = [] {
+            didSet { renderer.updateEligibleStoneCells(eligibleStoneCells) }
+        }
+        var allowsDragging = true
         private var cellCount = 0
 
-        init(onPlaceStone: @escaping (Int) -> Void) {
+        init(onPlaceStone: @escaping (Int) -> Bool) {
             self.onPlaceStone = onPlaceStone
         }
 
@@ -55,7 +65,7 @@ struct CreekSceneView: UIViewRepresentable {
             let point = gesture.location(in: view)
             switch gesture.state {
             case .began:
-                guard CreekPicking.isNearStone(
+                guard allowsDragging, CreekPicking.isNearStone(
                     point: point,
                     viewport: view.bounds.size,
                     projection: renderer.projection
@@ -67,16 +77,22 @@ struct CreekSceneView: UIViewRepresentable {
                 renderer.moveDrag(to: point, viewport: view.bounds.size)
             case .ended:
                 guard renderer.isDragging else { return }
-                renderer.endDrag()
                 guard let cell = CreekPicking.cell(
                     at: point,
                     viewport: view.bounds.size,
+                    eligibleCells: eligibleStoneCells,
                     cellCount: cellCount
-                ) else { return }
-                onPlaceStone(cell)
-                UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+                ) else {
+                    renderer.endDrag(acceptedCell: nil)
+                    return
+                }
+                let accepted = onPlaceStone(cell)
+                renderer.endDrag(acceptedCell: accepted ? cell : nil)
+                if accepted {
+                    UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+                }
             default:
-                renderer.endDrag()
+                renderer.endDrag(acceptedCell: nil)
             }
         }
     }
@@ -101,9 +117,12 @@ enum CreekPicking {
         return distance(scenePoint, stone) < 0.25
     }
 
+    // Shape the Bend (4): picking considers only authored effective,
+    // currently unoccupied stone seats.
     static func cell(
         at point: CGPoint,
         viewport: CGSize,
+        eligibleCells: [Int],
         cellCount: Int
     ) -> Int? {
         guard cellCount > 0, viewport.width > 0, viewport.height > 0 else {
@@ -114,7 +133,10 @@ enum CreekPicking {
             1 - Float(point.y / viewport.height) * 2
         )
         let anchors = CreekLayout.anchors(count: cellCount)
-        guard let nearest = anchors.enumerated().min(by: {
+        let eligibleAnchors = anchors.enumerated().filter {
+            eligibleCells.contains($0.offset)
+        }
+        guard let nearest = eligibleAnchors.min(by: {
             distance_squared($0.element, scenePoint)
                 < distance_squared($1.element, scenePoint)
         }), distance(nearest.element, scenePoint) < 0.34 else { return nil }
@@ -122,10 +144,11 @@ enum CreekPicking {
     }
 }
 
-private struct CreekVertex {
+struct CreekVertex {
     var position: SIMD2<Float>
     var color: SIMD4<Float>
-    var water: Float
+    var depth: Float
+    var current: Float
 }
 
 @MainActor
@@ -138,9 +161,7 @@ final class CreekRenderer: NSObject, MTKViewDelegate {
     private(set) var projection: SimulationProjection?
     private(set) var isDragging = false
     private var dragPosition: SIMD2<Float>?
-    private var priorDepths: [Double] = []
-    private var targetDepths: [Double] = []
-    private var transitionStarted = CACurrentMediaTime()
+    private var eligibleStoneCells: [Int] = []
     private let started = CACurrentMediaTime()
 
     func attach(to view: MTKView) {
@@ -190,15 +211,15 @@ final class CreekRenderer: NSObject, MTKViewDelegate {
     }
 
     func update(projection: SimulationProjection) {
-        let incoming = projection.cells.map(\.waterDepth)
-        if targetDepths.isEmpty {
-            priorDepths = incoming
-        } else if incoming != targetDepths {
-            priorDepths = displayedDepths(at: CACurrentMediaTime())
-            transitionStarted = CACurrentMediaTime()
-        }
-        targetDepths = incoming
         self.projection = projection
+        if !isDragging {
+            dragPosition = nil
+        }
+        rebuild()
+    }
+
+    func updateEligibleStoneCells(_ cells: [Int]) {
+        eligibleStoneCells = cells
         rebuild()
     }
 
@@ -215,9 +236,17 @@ final class CreekRenderer: NSObject, MTKViewDelegate {
         rebuild()
     }
 
-    func endDrag() {
+    // Shape the Bend (4): preserve the dropped location until the synchronous
+    // placement acknowledgement has selected its authoritative seat.
+    func endDrag(acceptedCell: Int?) {
         isDragging = false
-        dragPosition = nil
+        if let acceptedCell,
+           let projection,
+           CreekLayout.anchors(count: projection.cells.count).indices.contains(acceptedCell) {
+            dragPosition = CreekLayout.anchors(count: projection.cells.count)[acceptedCell]
+        } else {
+            dragPosition = nil
+        }
         rebuild()
     }
 
@@ -225,8 +254,8 @@ final class CreekRenderer: NSObject, MTKViewDelegate {
         guard let projection else { return }
         vertices = CreekMesh.make(
             projection: projection,
-            displayedDepths: displayedDepths(at: CACurrentMediaTime()),
-            draggedStone: dragPosition
+            draggedStone: dragPosition,
+            eligibleStoneCells: isDragging ? eligibleStoneCells : []
         )
         guard let device = view?.device else { return }
         vertexBuffer = device.makeBuffer(
@@ -236,21 +265,9 @@ final class CreekRenderer: NSObject, MTKViewDelegate {
         )
     }
 
-    private func displayedDepths(at now: CFTimeInterval) -> [Double] {
-        guard priorDepths.count == targetDepths.count else { return targetDepths }
-        let raw = min(1, max(0, (now - transitionStarted) / 0.7))
-        let eased = 1 - pow(1 - raw, 3)
-        return zip(priorDepths, targetDepths).map { prior, target in
-            prior + (target - prior) * eased
-        }
-    }
-
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {}
 
     func draw(in view: MTKView) {
-        if CACurrentMediaTime() - transitionStarted < 0.7 {
-            rebuild()
-        }
         guard let pipeline, let queue,
               let drawable = view.currentDrawable,
               let pass = view.currentRenderPassDescriptor,
@@ -283,11 +300,11 @@ enum CreekLayout {
     }
 }
 
-private enum CreekMesh {
+enum CreekMesh {
     static func make(
         projection: SimulationProjection,
-        displayedDepths: [Double]? = nil,
-        draggedStone: SIMD2<Float>? = nil
+        draggedStone: SIMD2<Float>? = nil,
+        eligibleStoneCells: [Int] = []
     ) -> [CreekVertex] {
         guard !projection.cells.isEmpty else { return [] }
         var result: [CreekVertex] = []
@@ -316,18 +333,28 @@ private enum CreekMesh {
             )
         }
 
-        let depths = displayedDepths ?? projection.cells.map(\.waterDepth)
-        let waterWidths = depths.map {
-            0.13 + Float(min(0.34, $0)) * 0.42
-        }
+        let depths = projection.cells.map(\.waterDepth)
+        // Shape the Bend (5): this calibrated width remains strictly monotonic
+        // over authoritative depth; the former 0.34-depth cap is intentionally absent.
+        let waterWidths = depths.map { calibratedWaterWidth(depth: $0) }
         for index in 0..<(anchors.count - 1) {
             let depth = Float((depths[index] + depths[index + 1]) * 0.5)
-            let normalizedDepth = min(1, max(0, (depth - 0.12) / 0.24))
+            let normalizedDepth = max(0, (depth - 0.12) / 0.44)
+            let transfer = projection.waterTransfers.indices.contains(index)
+                ? Float(projection.waterTransfers[index]) : 0
+            let segmentCalmness = depth > 0 ? transfer / depth : 0
+            let targetCell = projection.poolObjective?.targetCell
+            let currentMetric = index == targetCell
+                ? Float(projection.poolObjective?.calmness ?? Double(segmentCalmness))
+                : segmentCalmness
+            // At the objective boundary this is CreekCore's exact authoritative
+            // calmness. Other segments use the same transfer/depth visual proxy.
+            let normalizedCurrent = max(0, currentMetric / 0.10)
             let waterColor = SIMD4<Float>(
-                0.11 - normalizedDepth * 0.045,
-                0.56 - normalizedDepth * 0.12,
-                0.66 - normalizedDepth * 0.07,
-                0.69 + normalizedDepth * 0.16
+                0.11 - min(1, normalizedDepth) * 0.045,
+                0.56 - min(1, normalizedDepth) * 0.12,
+                0.66 - min(1, normalizedDepth) * 0.07,
+                0.69 + min(1, normalizedDepth) * 0.16
             )
             ribbonSegment(
                 &result,
@@ -335,7 +362,8 @@ private enum CreekMesh {
                 widths: waterWidths,
                 index: index,
                 color: waterColor,
-                water: normalizedDepth + 0.01
+                depth: normalizedDepth + 0.01,
+                current: normalizedCurrent
             )
         }
 
@@ -349,6 +377,16 @@ private enum CreekMesh {
                 color: holding
                     ? SIMD4<Float>(0.48, 0.92, 0.70, 0.48)
                     : SIMD4<Float>(0.90, 0.82, 0.45, 0.28)
+            )
+        }
+
+        // Shape the Bend (4): eligible landing seats appear only while dragging.
+        for cell in eligibleStoneCells where anchors.indices.contains(cell) {
+            ring(
+                &result,
+                center: anchors[cell],
+                radius: 0.13,
+                color: SIMD4<Float>(0.72, 0.96, 0.82, 0.48)
             )
         }
 
@@ -371,12 +409,17 @@ private enum CreekMesh {
         return result
     }
 
+    static func calibratedWaterWidth(depth: Double) -> Float {
+        0.13 + Float(max(0, depth)) * 0.42
+    }
+
     private static func ribbon(
         _ vertices: inout [CreekVertex],
         points: [SIMD2<Float>],
         widths: [Float],
         color: SIMD4<Float>,
-        water: Float = 0
+        depth: Float = 0,
+        current: Float = 0
     ) {
         guard points.count >= 2 else { return }
         for index in 0..<(points.count - 1) {
@@ -390,14 +433,17 @@ private enum CreekMesh {
             let b = points[index] - perpendicular * widths[index]
             let c = points[index + 1] - nextPerpendicular * widths[index + 1]
             let d = points[index + 1] + nextPerpendicular * widths[index + 1]
-            polygonQuad(&vertices, a, b, c, d, color: color, water: water)
+            polygonQuad(
+                &vertices, a, b, c, d,
+                color: color, depth: depth, current: current
+            )
         }
     }
 
     private static func ribbonSegment(
         _ vertices: inout [CreekVertex],
         points: [SIMD2<Float>], widths: [Float], index: Int,
-        color: SIMD4<Float>, water: Float
+        color: SIMD4<Float>, depth: Float, current: Float
     ) {
         let direction = simd_normalize(points[index + 1] - points[index])
         let perpendicular = SIMD2(-direction.y, direction.x)
@@ -412,7 +458,8 @@ private enum CreekMesh {
             points[index + 1] - nextPerpendicular * widths[index + 1],
             points[index + 1] + nextPerpendicular * widths[index + 1],
             color: color,
-            water: water
+            depth: depth,
+            current: current
         )
     }
 
@@ -432,7 +479,8 @@ private enum CreekMesh {
                 center + SIMD2(cos(a1), sin(a1)) * radius,
                 center + SIMD2(cos(a1), sin(a1)) * inner,
                 color: color,
-                water: 0
+                depth: 0,
+                current: 0
             )
         }
     }
@@ -461,24 +509,24 @@ private enum CreekMesh {
         _ vertices: inout [CreekVertex],
         _ a: SIMD2<Float>, _ b: SIMD2<Float>,
         _ c: SIMD2<Float>, _ d: SIMD2<Float>,
-        color: SIMD4<Float>, water: Float
+        color: SIMD4<Float>, depth: Float, current: Float
     ) {
-        let va = CreekVertex(position: a, color: color, water: water)
-        let vb = CreekVertex(position: b, color: color, water: water)
-        let vc = CreekVertex(position: c, color: color, water: water)
-        let vd = CreekVertex(position: d, color: color, water: water)
+        let va = CreekVertex(position: a, color: color, depth: depth, current: current)
+        let vb = CreekVertex(position: b, color: color, depth: depth, current: current)
+        let vc = CreekVertex(position: c, color: color, depth: depth, current: current)
+        let vd = CreekVertex(position: d, color: color, depth: depth, current: current)
         vertices += [va, vb, vc, va, vc, vd]
     }
 
     private static func quad(
         _ vertices: inout [CreekVertex],
         x0: Float, x1: Float, y0: Float, y1: Float,
-        color: SIMD4<Float>, water: Float = 0
+        color: SIMD4<Float>, depth: Float = 0, current: Float = 0
     ) {
-        let a = CreekVertex(position: [x0, y0], color: color, water: water)
-        let b = CreekVertex(position: [x1, y0], color: color, water: water)
-        let c = CreekVertex(position: [x1, y1], color: color, water: water)
-        let d = CreekVertex(position: [x0, y1], color: color, water: water)
+        let a = CreekVertex(position: [x0, y0], color: color, depth: depth, current: current)
+        let b = CreekVertex(position: [x1, y0], color: color, depth: depth, current: current)
+        let c = CreekVertex(position: [x1, y1], color: color, depth: depth, current: current)
+        let d = CreekVertex(position: [x0, y1], color: color, depth: depth, current: current)
         vertices += [a, b, c, a, c, d]
     }
 
@@ -492,9 +540,9 @@ private enum CreekMesh {
         ].map { center + $0 * radius }
         for index in 1..<(points.count - 1) {
             vertices += [
-                CreekVertex(position: points[0], color: color, water: 0),
-                CreekVertex(position: points[index], color: color, water: 0),
-                CreekVertex(position: points[index + 1], color: color, water: 0),
+                CreekVertex(position: points[0], color: color, depth: 0, current: 0),
+                CreekVertex(position: points[index], color: color, depth: 0, current: 0),
+                CreekVertex(position: points[index + 1], color: color, depth: 0, current: 0),
             ]
         }
     }

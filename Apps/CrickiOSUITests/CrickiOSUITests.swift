@@ -1,50 +1,69 @@
 import XCTest
 
+@MainActor
 final class CrickiOSUITests: XCTestCase {
-    func testShapeTheBendJourney() {
+    // Shape the Bend (2–4): exercise the asynchronous presentation and explicit
+    // retry/keep closure through the accessibility-facing UI.
+    func testShapeTheBendAsyncJourney() {
         let app = XCUIApplication()
         app.launchEnvironment["CRICK_UI_TEST_RESET"] = "1"
         app.launch()
 
         let scene = app.otherElements["creek-scene"]
         XCTAssertTrue(scene.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["objective-message"].label.contains("gather"))
         XCTAssertTrue(app.staticTexts["placement-prompt"].exists)
-        XCTAssertTrue(app.buttons["choose-stone-position"].exists)
+        attachScreenshot(named: "Shape the Bend — flowing baseline")
+
+        let menu = app.buttons["choose-stone-position"]
+        menu.tap()
+        XCTAssertFalse(app.buttons["place-stone-5"].exists)
+        app.buttons["place-stone-4"].tap()
+        XCTAssertTrue(app.staticTexts["stone-set"].waitForExistence(timeout: 2))
+
+        menu.tap()
+        XCTAssertFalse(app.buttons["place-stone-4"].exists)
+        app.tap()
 
         let waterWork = app.buttons["let-water-work"]
-        XCTAssertFalse(waterWork.isEnabled)
-        let bankStone = scene.coordinate(
-            withNormalizedOffset: CGVector(dx: 0.16, dy: 0.86)
-        )
-        let insideBend = scene.coordinate(
-            withNormalizedOffset: CGVector(dx: 0.59, dy: 0.50)
-        )
-        bankStone.press(forDuration: 0.15, thenDragTo: insideBend)
         XCTAssertTrue(waterWork.isEnabled)
-
         waterWork.tap()
-        XCTAssertEqual(
-            app.staticTexts["objective-message"].label,
-            "A calm pool is holding."
-        )
-        let completedCreek = XCTAttachment(screenshot: app.screenshot())
-        completedCreek.name = "Shape the Bend — holding pool"
-        completedCreek.lifetime = .keepAlways
-        add(completedCreek)
+        XCTAssertTrue(app.staticTexts["water-playing"].waitForExistence(timeout: 1))
+        XCTAssertTrue(app.staticTexts["water-playing"].label.contains("of 20"))
+        XCTAssertTrue(app.staticTexts["result-copy"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["result-copy"].label.contains("current is still quick"))
+        attachScreenshot(named: "Shape the Bend — first outcome")
+        XCTAssertTrue(app.buttons["try-another-spot"].exists)
+        XCTAssertFalse(app.buttons["keep-creek"].exists)
+
+        app.buttons["try-another-spot"].tap()
+        XCTAssertTrue(app.staticTexts["move-stone-prompt"].waitForExistence(timeout: 2))
+        XCTAssertFalse(waterWork.isEnabled)
+
+        menu.tap()
+        app.buttons["place-stone-3"].tap()
+        waterWork.tap()
+        XCTAssertTrue(app.staticTexts["water-playing"].waitForExistence(timeout: 1))
+        XCTAssertTrue(app.staticTexts["water-playing"].label.contains("of 20"))
+        XCUIDevice.shared.press(.home)
+        app.activate()
+        XCTAssertTrue(app.staticTexts["result-copy"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.staticTexts["result-copy"].label.contains("deep, calm pool"))
+        attachScreenshot(named: "Shape the Bend — successful pool")
+        app.buttons["keep-creek"].tap()
+        XCTAssertTrue(app.staticTexts["creek-kept"].waitForExistence(timeout: 2))
+        XCTAssertFalse(app.buttons["let-water-work"].exists)
+        XCTAssertFalse(app.buttons["choose-stone-position"].exists)
 
         app.buttons["field-notes"].tap()
         let tick = app.staticTexts["authoritative-tick"]
-        XCTAssertEqual(tick.label, "Fixed ticks, 20")
-        let save = app.buttons["save-snapshot"]
-        XCTAssertTrue(save.waitForExistence(timeout: 3))
-        save.tap()
-        XCTAssertTrue(app.buttons["resume-snapshot"].isEnabled)
-        app.buttons["Done"].tap()
+        XCTAssertTrue(tick.waitForExistence(timeout: 3))
+        XCTAssertEqual(tick.label, "Fixed ticks, 40")
+    }
 
-        waterWork.tap()
-        app.buttons["field-notes"].tap()
-        app.buttons["resume-snapshot"].tap()
-        XCTAssertEqual(app.staticTexts["authoritative-tick"].label, "Fixed ticks, 20")
+    private func attachScreenshot(named name: String) {
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 }

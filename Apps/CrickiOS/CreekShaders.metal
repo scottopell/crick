@@ -4,14 +4,16 @@ using namespace metal;
 struct CreekVertex {
     float2 position;
     float4 color;
-    float water;
+    float depth;
+    float current;
 };
 
 struct RasterData {
     float4 position [[position]];
     float4 color;
     float2 world;
-    float water;
+    float depth;
+    float current;
 };
 
 vertex RasterData creekVertex(
@@ -23,7 +25,8 @@ vertex RasterData creekVertex(
     output.position = float4(input.position, 0, 1);
     output.color = input.color;
     output.world = input.position;
-    output.water = input.water;
+    output.depth = input.depth;
+    output.current = input.current;
     return output;
 }
 
@@ -32,13 +35,18 @@ fragment float4 creekFragment(
     constant float &time [[buffer(0)]]
 ) {
     float4 color = input.color;
-    if (input.water > 0.0) {
-        float ripple = sin(input.world.x * 34.0 - time * 2.4)
-            * cos(input.world.y * 27.0 + time * 1.2);
-        float glint = smoothstep(0.62, 0.96, ripple)
-            * mix(0.13, 0.055, input.water);
-        float edgeLight = 0.035 * (1.0 - input.water);
-        color.rgb += glint + edgeLight;
+    if (input.depth > 0.0) {
+        // Shape the Bend (5): authoritative depth controls body tone while
+        // authoritative transfer independently controls ripple speed/contrast.
+        // Wall time contributes phase only and never simulation authority.
+        float depthTone = clamp(input.depth, 0.0, 1.0);
+        float current = clamp(input.current, 0.0, 1.5);
+        float ripple = sin(input.world.x * 34.0 - time * (0.7 + current * 3.2))
+            * cos(input.world.y * 27.0 + time * (0.35 + current * 1.4));
+        float glint = smoothstep(0.58, 0.96, ripple)
+            * mix(0.025, 0.15, clamp(current, 0.0, 1.0));
+        float depthShade = mix(0.045, -0.055, depthTone);
+        color.rgb += depthShade + glint;
     }
     return color;
 }

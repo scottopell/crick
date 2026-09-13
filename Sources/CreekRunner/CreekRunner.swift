@@ -8,7 +8,7 @@ public enum SnapshotError: Error, Equatable, Sendable {
 }
 
 public struct SimulationSnapshot: Codable, Equatable, Sendable {
-    public static let currentSchemaVersion = 2
+    public static let currentSchemaVersion = 3
 
     public var schemaVersion: Int
     public var simulationVersion: Int
@@ -83,19 +83,41 @@ public struct ScenarioDefinition: Codable, Equatable, Sendable {
 public enum BuiltInScenarios {
     public static let shapeTheBend = ScenarioDefinition(
         name: "shape-the-bend",
-        summary: "Place one stone to form a calm pool at the creek bend",
-        initialState: ordinaryReach(
+        summary: "Place one stone to form a deep, calm pool at the creek bend",
+        initialState: WorldState(
             seed: 42,
+            cells: [
+                Cell(bedElevation: 1.0253616102553211, waterDepth: 0.6096161236265282, suspendedSediment: 0.003631775176957968),
+                Cell(bedElevation: 0.9379237179552191, waterDepth: 0.4903339260306105, suspendedSediment: 0.0032346796903309433),
+                Cell(bedElevation: 0.8769761706796154, waterDepth: 0.36680720842300785, suspendedSediment: 0.0028903734329650396),
+                Cell(bedElevation: 0.8064767138814123, waterDepth: 0.27215728986976423, suspendedSediment: 0.0026187706814518102),
+                Cell(bedElevation: 0.7351134212452618, waterDepth: 0.19365141160156246, suspendedSediment: 0.0024302285890930413),
+                Cell(bedElevation: 0.6565547007868562, waterDepth: 0.13297530857857678, suspendedSediment: 0.0019927874430562937),
+            ],
+            forcing: BoundaryForcing(waterPerTick: 0.05, sedimentPerTick: 0.001),
             poolObjective: PoolObjective(
                 targetCell: 2,
-                minimumDepth: 0.23,
-                maximumTransfer: 0.028,
+                minimumDepth: 0.50,
+                maximumCalmness: 0.060,
                 requiredTicks: 5
-            )
+            ),
+            initialTransfers: [
+                0.045397189711974602,
+                0.040433496129136791,
+                0.036129667912062992,
+                0.032734633518147628,
+                0.030377857363663014,
+            ]
         ),
         commands: [],
         endTick: 0
     )
+
+    /// Stone seats with a modeled downstream boundary. The outlet cell is not
+    /// offered because its resistance cannot affect the current solver.
+    public static func shapeTheBendStoneCells(current: Int? = nil) -> [Int] {
+        shapeTheBend.initialState.cells.indices.dropLast().filter { $0 != current }
+    }
 
     public static let baseline = ScenarioDefinition(
         name: "baseline",

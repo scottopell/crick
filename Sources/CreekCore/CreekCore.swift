@@ -9,7 +9,7 @@
 ///   not promised. Snapshots declare their schema and simulation versions.
 public enum DeterminismGuarantee {
     /// Bump whenever authoritative stepping semantics change incompatibly.
-    public static let compatibilityID = "crick-sim-v4"
+    public static let compatibilityID = "crick-sim-v5"
     public static let text = "Exact replay within the same determinism compatibility ID and platform"
 }
 
@@ -67,18 +67,20 @@ public struct MaterialLedger: Codable, Equatable, Sendable {
 public struct PoolObjective: Codable, Equatable, Sendable {
     public let targetCell: Int
     public let minimumDepth: Double
-    public let maximumTransfer: Double
+    /// Maximum local flow-speed proxy: transfer leaving the target divided by
+    /// water depth at the target.
+    public let maximumCalmness: Double
     public let requiredTicks: UInt64
 
     public init(
         targetCell: Int,
         minimumDepth: Double,
-        maximumTransfer: Double,
+        maximumCalmness: Double,
         requiredTicks: UInt64
     ) {
         self.targetCell = targetCell
         self.minimumDepth = minimumDepth
-        self.maximumTransfer = maximumTransfer
+        self.maximumCalmness = maximumCalmness
         self.requiredTicks = requiredTicks
     }
 }
@@ -96,10 +98,11 @@ public struct PoolObjectiveResult: Codable, Equatable, Sendable {
     public let requiredTicks: UInt64
     public let depth: Double
     public let transfer: Double
+    public let calmness: Double
 }
 
 public struct WorldState: Codable, Equatable, Sendable {
-    public static let simulationVersion = 4
+    public static let simulationVersion = 5
 
     public internal(set) var tick: UInt64
     public internal(set) var seed: UInt64
@@ -114,16 +117,21 @@ public struct WorldState: Codable, Equatable, Sendable {
         seed: UInt64,
         cells: [Cell],
         forcing: BoundaryForcing,
-        poolObjective: PoolObjective? = nil
+        poolObjective: PoolObjective? = nil,
+        initialTransfers: [Double] = []
     ) {
         precondition(cells.count >= 2, "A reach requires at least two cells")
+        precondition(
+            initialTransfers.isEmpty || initialTransfers.count == cells.count - 1,
+            "Initial transfers must describe every cell-to-cell boundary"
+        )
         self.tick = 0
         self.seed = seed
         self.cells = cells
         self.forcing = forcing
         self.poolObjective = poolObjective
         self.poolObjectiveProgress = 0
-        self.lastTransfers = []
+        self.lastTransfers = initialTransfers
         self.ledger = MaterialLedger(
             initialWater: cells.reduce(0) { $0 + $1.waterDepth },
             initialSediment: cells.reduce(0) {
@@ -146,8 +154,9 @@ public struct WorldState: Codable, Equatable, Sendable {
         let depth = cells[objective.targetCell].waterDepth
         let transfer = lastTransfers.indices.contains(objective.targetCell)
             ? lastTransfers[objective.targetCell] : 0
+        let calmness = Self.calmness(transfer: transfer, depth: depth)
         let depthMet = depth >= objective.minimumDepth
-        let flowMet = transfer <= objective.maximumTransfer
+        let flowMet = calmness <= objective.maximumCalmness
         let status: PoolObjectiveStatus
         if tick == 0 || lastTransfers.isEmpty {
             status = .gathering
@@ -166,8 +175,14 @@ public struct WorldState: Codable, Equatable, Sendable {
             progressTicks: poolObjectiveProgress,
             requiredTicks: objective.requiredTicks,
             depth: depth,
-            transfer: transfer
+            transfer: transfer,
+            calmness: calmness
         )
+    }
+
+    public static func calmness(transfer: Double, depth: Double) -> Double {
+        guard depth > 0 else { return transfer == 0 ? 0 : .infinity }
+        return transfer / depth
     }
 }
 
@@ -197,6 +212,7 @@ public enum CommandError: Error, Equatable, Sendable {
     case invalidCell(Int)
     case invalidAmount
     case insufficientSediment
+    case noMovement(Int)
 }
 
 public enum StateError: Error, Equatable, Sendable {
@@ -324,23 +340,30 @@ public struct Simulator: Sendable {
                 waterPerTick: water,
                 sedimentPerTick: sediment
             )
+            invalidateHydraulicEvidence()
         case let .placeRock(cell, resistance):
             try validate(cell: cell)
             guard resistance >= 0, resistance <= 1, resistance.isFinite else {
                 throw CommandError.invalidAmount
             }
             state.cells[cell].rockResistance = resistance
+            invalidateHydraulicEvidence()
         case let .removeRock(cell):
             try validate(cell: cell)
             state.cells[cell].rockResistance = 0
+            invalidateHydraulicEvidence()
         case let .moveRock(from, to, resistance):
             try validate(cell: to)
-            if let from { try validate(cell: from) }
+            if let from {
+                try validate(cell: from)
+                guard from != to else { throw CommandError.noMovement(to) }
+            }
             guard resistance > 0, resistance <= 1, resistance.isFinite else {
                 throw CommandError.invalidAmount
             }
             if let from { state.cells[from].rockResistance = 0 }
             state.cells[to].rockResistance = resistance
+            invalidateHydraulicEvidence()
         case let .excavate(cell, sediment):
             try validate(cell: cell)
             guard sediment > 0, sediment.isFinite else {
@@ -351,6 +374,7 @@ public struct Simulator: Sendable {
             }
             state.cells[cell].bedElevation -= sediment
             state.ledger.playerSedimentRemoved += sediment
+            invalidateHydraulicEvidence()
         }
         commandLog.append(scheduled)
     }
@@ -382,9 +406,9 @@ public struct Simulator: Sendable {
         if let objective = state.poolObjective {
             if !state.cells.indices.contains(objective.targetCell)
                 || !objective.minimumDepth.isFinite
-                || !objective.maximumTransfer.isFinite
-                || objective.minimumDepth < 0
-                || objective.maximumTransfer < 0
+                  || !objective.maximumCalmness.isFinite
+                  || objective.minimumDepth < 0
+                  || objective.maximumCalmness < 0
                 || objective.requiredTicks == 0 {
                 violations.append("Pool objective is invalid")
             }
@@ -556,8 +580,9 @@ public struct Simulator: Sendable {
         let depth = state.cells[objective.targetCell].waterDepth
         let transfer = state.lastTransfers.indices.contains(objective.targetCell)
             ? state.lastTransfers[objective.targetCell] : 0
+        let calmness = WorldState.calmness(transfer: transfer, depth: depth)
         if depth >= objective.minimumDepth
-            && transfer <= objective.maximumTransfer {
+            && calmness <= objective.maximumCalmness {
             state.poolObjectiveProgress = min(
                 objective.requiredTicks,
                 state.poolObjectiveProgress + 1
@@ -565,6 +590,12 @@ public struct Simulator: Sendable {
         } else {
             state.poolObjectiveProgress = 0
         }
+    }
+
+    private mutating func invalidateHydraulicEvidence() {
+        state.poolObjectiveProgress = 0
+        state.lastTransfers = []
+        lastTickDiagnostics = nil
     }
 
     private func validate(cell: Int) throws {

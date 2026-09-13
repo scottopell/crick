@@ -164,7 +164,7 @@ func snapshotVersionRejection() throws {
     var snapshot = SimulationSnapshot(simulator: simulator)
     snapshot.schemaVersion += 1
 
-    #expect(throws: SnapshotError.unsupportedSchema(found: 3)) {
+    #expect(throws: SnapshotError.unsupportedSchema(found: 4)) {
         _ = try snapshot.restore()
     }
 }
@@ -284,43 +284,113 @@ func strictCommandLine() throws {
     #expect(request.jsonPath == "result.json")
 }
 
-@Test("Shape the Bend is achievable by a stone at the bend")
-func poolObjectiveSuccess() throws {
-    var simulator = try Simulator(state: BuiltInScenarios.shapeTheBend.initialState)
-    try simulator.apply(ScheduledCommand(
-        tick: 0,
-        command: .moveRock(from: nil, to: 3, resistance: 0.8)
-    ))
-    simulator.step(count: 40)
+@Test("Shape the Bend begins as a rebased, flowing authoritative reach")
+func flowingPoolFixture() throws {
+    let state = BuiltInScenarios.shapeTheBend.initialState
+    let simulator = try Simulator(state: state)
 
-    #expect(simulator.state.poolObjectiveResult?.status == .holding)
-    #expect(simulator.state.poolObjectiveResult?.progressTicks == 5)
+    #expect(state.tick == 0)
+    #expect(state.lastTransfers.count == state.cells.count - 1)
+    #expect(state.lastTransfers.allSatisfy { $0 > 0 })
+    #expect(abs(state.cells[2].waterDepth - 0.36680720842300785) < 1e-15)
+    #expect(state.poolObjectiveResult!.calmness == state.lastTransfers[2] / state.cells[2].waterDepth)
+    #expect(state.poolObjectiveResult?.status == .gathering)
     #expect(simulator.diagnostics().violations.isEmpty)
 }
 
-@Test("Water-work batches make legible progress toward the pool")
-func poolObjectiveCadence() throws {
+@Test("Pool calmness is authoritative transfer divided by target depth")
+func poolCalmnessMetric() throws {
+    var simulator = try Simulator(state: BuiltInScenarios.shapeTheBend.initialState)
+    simulator.step()
+    let result = simulator.state.poolObjectiveResult!
+
+    #expect(result.calmness == result.transfer / result.depth)
+    #expect(result.status == .gathering)
+}
+
+@Test("Shape the Bend placement outcomes are deterministic at player horizons")
+func poolPlacementOutcomes() throws {
+    let expected: [Int: [UInt64: PoolObjectiveStatus]] = [
+        0: [20: .gathering, 40: .gathering, 80: .gathering],
+        1: [20: .gathering, 40: .gathering, 80: .gathering],
+        2: [20: .holding, 40: .holding, 80: .holding],
+        3: [20: .holding, 40: .holding, 80: .holding],
+        4: [20: .deepButQuick, 40: .holding, 80: .holding],
+    ]
+
+    for (cell, horizons) in expected {
+        for (ticks, status) in horizons {
+            var simulator = try Simulator(state: BuiltInScenarios.shapeTheBend.initialState)
+            try simulator.apply(ScheduledCommand(
+                tick: 0,
+                command: .moveRock(from: nil, to: cell, resistance: 0.8)
+            ))
+            simulator.step(count: ticks)
+            #expect(simulator.state.poolObjectiveResult?.status == status)
+            #expect(simulator.diagnostics().violations.isEmpty)
+        }
+    }
+}
+
+@Test("The pool does not succeed without intervention at player horizons")
+func poolObjectiveRequiresIntervention() throws {
+    for ticks: UInt64 in [20, 40, 80] {
+        var simulator = try Simulator(state: BuiltInScenarios.shapeTheBend.initialState)
+        simulator.step(count: ticks)
+        #expect(simulator.state.poolObjectiveResult?.status != .holding)
+    }
+}
+
+@Test("Moving a stone clears evidence from the previous hydraulic geometry")
+func movingRockResetsObjectiveEvidence() throws {
     var simulator = try Simulator(state: BuiltInScenarios.shapeTheBend.initialState)
     try simulator.apply(ScheduledCommand(
         tick: 0,
         command: .moveRock(from: nil, to: 3, resistance: 0.8)
     ))
+    simulator.step(count: 20)
+    #expect(simulator.state.poolObjectiveResult?.status == .holding)
 
-    simulator.step(count: 10)
-    let halfway = simulator.state.poolObjectiveResult!
-    simulator.step(count: 10)
-    let complete = simulator.state.poolObjectiveResult!
+    try simulator.apply(ScheduledCommand(
+        tick: 20,
+        command: .moveRock(from: 3, to: 2, resistance: 0.8)
+    ))
+    #expect(simulator.state.poolObjectiveProgress == 0)
+    #expect(simulator.state.lastTransfers.isEmpty)
+    #expect(simulator.state.poolObjectiveResult?.status == .gathering)
+    #expect(simulator.diagnostics().lastTick == nil)
 
-    #expect(halfway.status != .holding)
-    #expect(complete.status == .holding)
+    simulator.step(count: 4)
+    #expect(simulator.state.poolObjectiveResult?.status != .holding)
+    simulator.step()
+    #expect(simulator.state.poolObjectiveResult?.status == .holding)
 }
 
-@Test("The pool does not succeed without the intervention")
-func poolObjectiveRequiresIntervention() throws {
+@Test("A same-cell stone move is rejected without mutation")
+func sameCellMoveIsAtomic() throws {
     var simulator = try Simulator(state: BuiltInScenarios.shapeTheBend.initialState)
-    simulator.step(count: 40)
+    try simulator.apply(ScheduledCommand(
+        tick: 0,
+        command: .moveRock(from: nil, to: 3, resistance: 0.8)
+    ))
+    simulator.step(count: 20)
+    let before = simulator
 
-    #expect(simulator.state.poolObjectiveResult?.status != .holding)
+    #expect(throws: CommandError.noMovement(3)) {
+        try simulator.apply(ScheduledCommand(
+            tick: 20,
+            command: .moveRock(from: 3, to: 3, resistance: 0.8)
+        ))
+    }
+    #expect(simulator.state == before.state)
+    #expect(simulator.commandLog == before.commandLog)
+    #expect(simulator.diagnostics() == before.diagnostics())
+}
+
+@Test("Shape the Bend never offers the ineffective outlet or current seat")
+func effectiveStoneSeats() {
+    #expect(BuiltInScenarios.shapeTheBendStoneCells() == [0, 1, 2, 3, 4])
+    #expect(BuiltInScenarios.shapeTheBendStoneCells(current: 3) == [0, 1, 2, 4])
 }
 
 @Test("Moving the stone is atomic and survives snapshot recovery")
@@ -360,29 +430,6 @@ func failedMoveRockIsAtomic() throws {
         ))
     }
     #expect(simulator.state == before)
-}
-
-@Test("Pool objective has viable choices and readable near misses")
-func poolPlacementOutcomes() throws {
-    var statuses: [PoolObjectiveStatus] = []
-    for cell in 0..<6 {
-        var simulator = try Simulator(state: BuiltInScenarios.shapeTheBend.initialState)
-        try simulator.apply(ScheduledCommand(
-            tick: 0,
-            command: .moveRock(from: nil, to: cell, resistance: 0.8)
-        ))
-        simulator.step(count: 40)
-        statuses.append(simulator.state.poolObjectiveResult!.status)
-    }
-
-    #expect(statuses == [
-        .deepButQuick,
-        .calmButShallow,
-        .holding,
-        .holding,
-        .deepButQuick,
-        .deepButQuick,
-    ])
 }
 
 @Test("Restore rejects completed objective progress with stale conditions")

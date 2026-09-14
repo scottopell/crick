@@ -4,6 +4,7 @@ import SwiftUI
 enum ShapeTheBendPhase: Equatable {
     case arranging
     case playing
+    case reading
     case outcome
     case kept
 }
@@ -16,6 +17,7 @@ struct ContentView: View {
     @State private var presentationID = UUID()
     @State private var errorMessage: String?
     @State private var showFieldNotes = false
+    @State private var showingBefore = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
 
@@ -34,6 +36,8 @@ struct ContentView: View {
                     projection: displayedProjection,
                     eligibleStoneCells: phase == .arranging ? session.eligibleStoneCells : [],
                     allowsDragging: phase == .arranging,
+                    reduceMotion: reduceMotion,
+                    revealsOutcome: phase == .outcome || phase == .kept,
                     onPlaceStone: placeStone
                 )
                 .accessibilityIdentifier("creek-scene")
@@ -120,6 +124,8 @@ struct ContentView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)
                 .accessibilityIdentifier("water-playing")
+            case .reading:
+                readingControls
             case .outcome:
                 outcomeControls
             case .kept:
@@ -176,6 +182,51 @@ struct ContentView: View {
             .tint(.cyan.opacity(0.78))
             .accessibilityIdentifier("let-water-work")
             .disabled(!session.canCommitAttempt)
+        }
+    }
+
+    private var readingControls: some View {
+        VStack(spacing: 10) {
+            if reduceMotion {
+                Text("Amber starts and cyan ends are paired marks showing equal-time travel distance.")
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.76))
+                    .multilineTextAlignment(.center)
+                    .accessibilityIdentifier("reduced-motion-distance-cue")
+            } else {
+                Text("Compare the foam's path and pace before reading the result.")
+                    .font(.subheadline.weight(.medium))
+                    .multilineTextAlignment(.center)
+            }
+            if session.comparisonBeforeProjection != nil {
+                Picker("Creek comparison", selection: $showingBefore) {
+                    Text("Before").tag(true)
+                    Text("After").tag(false)
+                }
+                .pickerStyle(.segmented)
+                .accessibilityIdentifier("creek-comparison")
+            } else {
+                Text("Before view unavailable for this older saved moment.")
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.76))
+                    .accessibilityIdentifier("before-unavailable")
+            }
+            Button("Reveal what happened") {
+                showingBefore = false
+                displayedProjection = session.projection
+                phase = .outcome
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.cyan.opacity(0.78))
+            .accessibilityIdentifier("reveal-result")
+        }
+        .onChange(of: showingBefore) { _, before in
+            if before, let comparison = session.comparisonBeforeProjection {
+                displayedProjection = comparison
+            } else {
+                showingBefore = false
+                displayedProjection = session.projection
+            }
         }
     }
 
@@ -243,7 +294,8 @@ struct ContentView: View {
             phase = .playing
             if reduceMotion {
                 displayedProjection = final
-                phase = .outcome
+                showingBefore = false
+                phase = .reading
                 return
             }
 
@@ -258,7 +310,8 @@ struct ContentView: View {
                 }
                 guard !Task.isCancelled, presentationID == id else { return }
                 displayedProjection = final
-                phase = .outcome
+                showingBefore = false
+                phase = .reading
                 presentationTask = nil
             }
         } catch {
@@ -274,7 +327,8 @@ struct ContentView: View {
         presentationTask?.cancel()
         presentationTask = nil
         displayedProjection = session.projection
-        phase = .outcome
+        showingBefore = false
+        phase = .reading
     }
 
     @discardableResult
@@ -305,6 +359,8 @@ struct ContentView: View {
             return "Find a place where water can gather and slow."
         case .playing:
             return "Watch depth and current change through the bend."
+        case .reading:
+            return "Read the creek first: compare its foam before and after."
         case .outcome, .kept:
             return displayedProjection.poolObjective?.title
                 ?? "The creek has settled into its new shape."
@@ -330,18 +386,20 @@ struct ContentView: View {
     private func synchronizeFromSession() {
         settlePresentation()
         displayedProjection = session.projection
+        showingBefore = false
         phase = session.attemptClosed ? .kept
-            : session.hasCommittedAttempt ? .outcome
+            : session.hasCommittedAttempt ? .reading
             : .arranging
     }
 
     private var sceneAccessibilityLabel: String {
-        let stone = session.projection.cells.firstIndex { $0.rockResistance > 0 }
+        let stone = displayedProjection.cells.firstIndex { $0.rockResistance > 0 }
             .map { "Stone at \(placementName($0))." } ?? "Stone on the lower bank."
         let state: String
         switch phase {
         case .arranging: state = "Arranging."
         case .playing: state = "Water working."
+        case .reading: state = showingBefore ? "Viewing the creek before the intervention." : "Viewing the creek after the intervention."
         case .outcome: state = "Outcome: \(resultCopy)"
         case .kept: state = "Kept. \(resultCopy)"
         }
@@ -354,6 +412,7 @@ private struct FieldNotesView: View {
     let onResume: () -> Void
     let onBeginAgain: () -> Void
     @Environment(\.dismiss) private var dismiss
+    @State private var resumeError: String?
 
     var body: some View {
         NavigationStack {
@@ -375,9 +434,13 @@ private struct FieldNotesView: View {
                     Button("Save this moment") { try? session.save() }
                         .accessibilityIdentifier("save-snapshot")
                     Button("Return to saved moment") {
-                        guard (try? session.resume()) != nil else { return }
-                        onResume()
-                        dismiss()
+                        do {
+                            try session.resume()
+                            onResume()
+                            dismiss()
+                        } catch {
+                            resumeError = "The saved moment is damaged and could not be restored."
+                        }
                     }
                     .disabled(!session.canResume)
                     .accessibilityIdentifier("resume-snapshot")
@@ -387,6 +450,14 @@ private struct FieldNotesView: View {
                         dismiss()
                     }
                 }
+            }
+            .alert("Saved moment unavailable", isPresented: Binding(
+                get: { resumeError != nil },
+                set: { if !$0 { resumeError = nil } }
+            )) {
+                Button("OK", role: .cancel) { resumeError = nil }
+            } message: {
+                Text(resumeError ?? "")
             }
             .navigationTitle("Field Notes")
             .toolbar { Button("Done") { dismiss() } }

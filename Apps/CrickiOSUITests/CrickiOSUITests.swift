@@ -15,13 +15,17 @@ final class CrickiOSUITests: XCTestCase {
         attachScreenshot(named: "Shape the Bend — flowing baseline")
 
         let menu = app.buttons["choose-stone-position"]
-        menu.tap()
-        XCTAssertFalse(app.buttons["place-stone-5"].exists)
-        app.buttons["place-stone-4"].tap()
-        XCTAssertTrue(app.staticTexts["stone-set"].waitForExistence(timeout: 2))
+        let start = scene.coordinate(withNormalizedOffset: CGVector(dx: 0.16, dy: 0.86))
+        let upstream = scene.coordinate(withNormalizedOffset: CGVector(dx: 0.07, dy: 0.21))
+        start.press(forDuration: 0.25, thenDragTo: upstream)
+        XCTAssertTrue(
+            app.staticTexts["stone-set"].waitForExistence(timeout: 2),
+            "Dragging the bank stone to an eligible seat must succeed"
+        )
 
+        // Exercise the accessibility/menu path independently; it must not mask drag failure.
         menu.tap()
-        XCTAssertFalse(app.buttons["place-stone-4"].exists)
+        XCTAssertFalse(app.buttons["place-stone-0"].exists)
         app.tap()
 
         let waterWork = app.buttons["let-water-work"]
@@ -29,9 +33,16 @@ final class CrickiOSUITests: XCTestCase {
         waterWork.tap()
         XCTAssertTrue(app.staticTexts["water-playing"].waitForExistence(timeout: 1))
         XCTAssertTrue(app.staticTexts["water-playing"].label.contains("of 20"))
-        XCTAssertTrue(app.staticTexts["result-copy"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["result-copy"].label.contains("current is still quick"))
-        attachScreenshot(named: "Shape the Bend — first outcome")
+        XCTAssertTrue(app.buttons["reveal-result"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["result-copy"].exists)
+        XCTAssertFalse(app.buttons["try-another-spot"].exists)
+        XCTAssertFalse(app.buttons["keep-creek"].exists)
+        app.buttons["Before"].tap()
+        attachScreenshot(named: "Shape the Bend — before comparison")
+        app.buttons["reveal-result"].tap()
+        XCTAssertTrue(app.staticTexts["result-copy"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.staticTexts["result-copy"].label.contains("did not form"))
+        attachScreenshot(named: "Shape the Bend — revealed first outcome")
         XCTAssertTrue(app.buttons["try-another-spot"].exists)
         XCTAssertFalse(app.buttons["keep-creek"].exists)
 
@@ -40,12 +51,15 @@ final class CrickiOSUITests: XCTestCase {
         XCTAssertFalse(waterWork.isEnabled)
 
         menu.tap()
-        app.buttons["place-stone-3"].tap()
+        app.buttons["place-stone-2"].tap()
         waterWork.tap()
         XCTAssertTrue(app.staticTexts["water-playing"].waitForExistence(timeout: 1))
         XCTAssertTrue(app.staticTexts["water-playing"].label.contains("of 20"))
         XCUIDevice.shared.press(.home)
         app.activate()
+        XCTAssertTrue(app.buttons["reveal-result"].waitForExistence(timeout: 2))
+        XCTAssertFalse(app.staticTexts["result-copy"].exists)
+        app.buttons["reveal-result"].tap()
         XCTAssertTrue(app.staticTexts["result-copy"].waitForExistence(timeout: 2))
         XCTAssertTrue(app.staticTexts["result-copy"].label.contains("deep, calm pool"))
         attachScreenshot(named: "Shape the Bend — successful pool")

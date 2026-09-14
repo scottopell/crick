@@ -64,7 +64,17 @@ Tests cover exact replay, fixed-step partitioning, atomic command scheduling and
 
 `shape-the-bend` is the first narrow game scenario. Its authoritative objective asks the player to create a deep, calm pool at bend cell 2 and hold both conditions for five consecutive fixed ticks. Objective definition, progress, last authoritative transfers, and result are owned by `CreekCore` and persist in snapshots.
 
-The scenario starts from a deterministic flowing fixture rebased from 40 ordinary authoritative ticks. Calmness is the local speed proxy `transfer leaving target / target water depth`, not total discharge. Current provisional thresholds are `0.50` minimum depth and `0.060` maximum calmness. Five effective stone seats are offered; the outlet is excluded because its resistance cannot affect this solver. At the first 20-tick horizon cells 2 and 3 hold, cell 4 is deep but still quick, and cells 0 and 1 do not form the pool. Tests lock outcomes at 20, 40, and 80 ticks. Moving the stone clears stale objective evidence before the next tick; changing these semantics requires a new determinism compatibility ID.
+The scenario starts from a deterministic flowing fixture rebased from 40 ordinary authoritative ticks. Calmness is the local speed proxy `transfer leaving target / target water depth`, not total discharge. Current provisional thresholds are `0.50` minimum depth and `0.060` maximum calmness. Five effective stone seats are offered; the outlet is excluded because its resistance cannot affect this solver. At the first 20-tick horizon cells 2 and 3 hold, cell 4 is deep but still quick, and cells 0 and 1 do not form the pool. Tests lock actual depth, calmness, and outcomes at 20, 40, and 80 ticks. The player journey uses cell 0 as the clearly failed representative rather than presenting borderline cell 4 as the instructional miss. Moving the stone clears stale objective evidence before the next tick; changing these semantics requires a new determinism compatibility ID.
+
+Measured `(depth, calmness)` by seat at 20 / 40 / 80 ticks:
+
+| Seat | 20 | 40 | 80 |
+| --- | --- | --- | --- |
+| 0 upstream | `(0.3309, 0.0910)` | `(0.3783, 0.0926)` | `(0.4895, 0.0845)` |
+| 1 above bend | `(0.2656, 0.0965)` | `(0.3094, 0.0993)` | `(0.4277, 0.0878)` |
+| 2 inside bend | `(0.6224, 0.0368)` | `(0.7723, 0.0368)` | `(1.0051, 0.0348)` |
+| 3 below bend | `(0.5475, 0.0494)` | `(0.6855, 0.0443)` | `(0.9091, 0.0389)` |
+| 4 lower run | `(0.5029, 0.0606)` | `(0.6307, 0.0508)` | `(0.8418, 0.0430)` |
 
 A single authoritative `moveRock` command atomically removes the stone from its prior cell and places it in its destination at the command tick. Rendering, drag previews, and settle animation remain projections and cannot relocate the stone.
 
@@ -97,9 +107,11 @@ A cosmetic shader clock animates only water glints. It is not an input to `Simul
 
 The playable interaction begins with one stone on the near bank. A pan gesture visually lifts and moves that renderer-owned preview; releasing over the creek resolves the nearest authored station and submits one authoritative `moveRock` command. Invalid releases snap back to the last authoritative location. A named “Choose a spot” menu provides the same intents without spatial dragging.
 
-“Test this spot · 20 creek seconds” synchronously commits exactly 20 fixed ticks and captures one immutable projection after every real tick. The UI presents those projections over about three seconds; cancellation or backgrounding settles to the already-committed final projection, and Reduce Motion presents it immediately. A near miss permits moving the same stone on the evolved reach before another bounded experiment. Only authoritative success offers “Keep this pool.” The player-facing objective text comes only from `PoolObjectiveResult`; detailed conservation data and save/resume remain in Field Notes.
+“Test this spot · 20 creek seconds” synchronously commits exactly 20 fixed ticks and captures one immutable projection after every real tick. The UI presents those projections over about three seconds; cancellation or backgrounding settles to the already-committed final projection, and Reduce Motion presents it immediately. Natural foam packets travel along the authored centerline at a continuous projection speed sourced only from immutable authoritative transfer/depth (the exact objective calmness at its segment). Reduce Motion replaces travel with paired static distance marks.
 
-Visual tuning remains projection-only: water depth controls width, color, and opacity; bank/gravel layers and stone shadows create depth; and an in-world ring marks the desired pool function. The canonical test places the stone below that ring, proving the goal marker is not a prescribed placement slot. Render geometry uses an `MTLBuffer` rather than transient constant bytes and validates the Swift/Metal vertex stride before pipeline creation; failure produces a visible accessible fallback instead of a blank viewport.
+Before the first intervention, the app captures the actual flowing projection; each evolved retry captures its own pre-move seam. After the bounded presentation, a dedicated read-creek phase offers a toggle between that before projection and the final after projection when comparison data is available. It hides header, bottom-control, accessibility, and success-haptic classifications until “Reveal what happened” is pressed. A miss permits moving the same stone on the evolved reach before another bounded experiment. Only revealed authoritative success offers “Keep this pool.” Detailed conservation data and save/resume remain in Field Notes.
+
+Visual tuning remains projection-only: water depth controls width, color, and opacity; bank/gravel layers and stone shadows create depth; and an in-world ring marks the desired pool function. The canonical test places the stone below that ring, proving the goal marker is not a prescribed placement slot. Render geometry uses `MTLBuffer` storage rather than transient constant bytes; dynamic foam uses a bounded three-buffer in-flight pool so the CPU never overwrites vertices still read by the GPU. The renderer validates the Swift/Metal vertex stride before pipeline creation; failure produces a visible accessible fallback instead of a blank viewport.
 
 ## Physical-device and TestFlight checklist
 
@@ -109,7 +121,7 @@ Simulator QA proves deterministic behavior and layout, but renewed physical-devi
 - [ ] Without coaching, the player identifies the stone, marked bend, creek direction, and need for both depth and calm.
 - [ ] Dragging reveals effective landing seats and confirms the accepted position; the outlet is never offered.
 - [ ] “Test this spot · 20 creek seconds” presents perceptible depth and current changes over one bounded observation.
-- [ ] A cell-4 near miss reads as deep but quick in the creek itself, not only in result text.
+- [ ] A clearly failed upstream placement reads as failed in the creek itself, not only in result text.
 - [ ] The player moves the same stone for a stated reason, understands the evolved reach was retained, and can reach a cell-2 or cell-3 success.
 - [ ] Failure offers retry, success alone offers Keep, and neither invites meaningless repeated test taps.
 - [ ] Save/Resume preserves the selected rock, creek authority, and attempt closure without creating a second stone.
@@ -120,6 +132,8 @@ Simulator QA proves deterministic behavior and layout, but renewed physical-devi
 - [ ] Record launch responsiveness, heat, battery impact, and any unexpected signing/storage behavior on device.
 
 Fresh-device acceptance requires at least 5/6 players to complete one test and correctly explain both the depth and current change, at least 5/6 to identify success or the missed condition without Field Notes, and at least 4/6 to choose a retry location for a stated causal reason. No more than 1/6 should repeat the test because the first run felt unfinished. If players can read the result text but cannot point to matching creek evidence, the revised thesis has failed; progression or broader simulation is not an acceptable substitute.
+
+**Physical-feedback gate: NOT PASSED.** Automated native/UI tests and simulator screenshots verify mechanics and presentation states, but no fresh-device player study has yet shown that people can identify the depth/current result from the creek before revealing the text. “Result text is the answer” remains the explicit failure condition; the acceptance ratios above still require physical playtest evidence.
 
 ## Known limitations
 

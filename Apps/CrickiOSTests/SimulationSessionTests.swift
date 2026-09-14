@@ -91,6 +91,99 @@ func actualAttemptFrames() throws {
     #expect(session.hasCommittedAttempt)
 }
 
+@MainActor
+@Test("Comparison captures actual flow before first intervention and retry seam")
+func comparisonBeforeIntegrity() throws {
+    let session = try SimulationSession(snapshotStore: MemorySnapshotStore())
+    let initial = session.projection
+    try session.placeRock(cell: 0)
+    #expect(session.comparisonBeforeProjection == initial)
+
+    _ = try session.commitShapeTheBendAttempt()
+    let evolved = session.projection
+    try session.tryAnotherSpot()
+    #expect(session.comparisonBeforeProjection?.tick == evolved.tick)
+    #expect(session.comparisonBeforeProjection?.cells == evolved.cells)
+    #expect(session.comparisonBeforeProjection?.waterTransfers == evolved.waterTransfers)
+    try session.placeRock(cell: 2)
+    #expect(session.comparisonBeforeProjection?.tick == evolved.tick)
+    #expect(session.comparisonBeforeProjection?.cells == evolved.cells)
+    #expect(session.comparisonBeforeProjection?.waterTransfers == evolved.waterTransfers)
+    let frames = try session.commitShapeTheBendAttempt()
+
+    #expect(frames.first?.tick == evolved.tick + 1)
+    #expect(session.projection.tick == 40)
+}
+
+@MainActor
+@Test("Foam integrator uses authoritative speed and crosses boundaries exactly")
+func foamTracerSourceAndPath() throws {
+    let session = try SimulationSession(snapshotStore: MemorySnapshotStore())
+    let projection = session.projection
+    let metrics = CreekTracer.speedMetrics(for: projection)
+    let target = try #require(projection.poolObjective?.targetCell)
+    #expect(metrics[target] == projection.poolObjective?.calmness)
+    #expect(metrics[target] == projection.poolObjective!.transfer / projection.poolObjective!.depth)
+
+    // The first speed reaches the 0.2 boundary; all remaining duration uses
+    // the next segment's doubled metric and lands exactly on 0.4.
+    let crossed = CreekTracer.advancedProgress(
+        from: 0.195,
+        duration: 0.25,
+        metrics: [1, 2, 1, 1, 1]
+    )
+    #expect(abs(crossed - 0.4) < 0.000_01)
+
+    // 7 * (1 / 11) divides just below 7 in Float. An exact boundary must
+    // select segment 7 rather than returning early from zero-speed segment 6.
+    var boundaryMetrics = Array(repeating: 0.0, count: 11)
+    boundaryMetrics[7] = 1
+    let segmentWidth: Float = 1 / 11
+    let exactBoundary = 7 * segmentWidth
+    let advancedFromBoundary = CreekTracer.advancedProgress(
+        from: exactBoundary,
+        duration: 0.1,
+        metrics: boundaryMetrics
+    )
+    #expect(advancedFromBoundary > exactBoundary)
+
+    let progress = CreekTracer.seeds
+    let beforePackets = CreekTracer.packets(
+        projection: projection,
+        progresses: progress,
+        reduceMotion: false
+    )
+    try session.placeRock(cell: 2)
+    let afterPackets = CreekTracer.packets(
+        projection: session.projection,
+        progresses: progress,
+        reduceMotion: false
+    )
+    #expect(beforePackets.map(\.position) == afterPackets.map(\.position))
+
+    let staticPackets = CreekTracer.packets(
+        projection: projection,
+        progresses: progress,
+        reduceMotion: true
+    )
+    #expect(staticPackets.count == beforePackets.count * 2)
+    for index in progress.indices {
+        let expected = CreekTracer.advancedProgress(
+            from: progress[index],
+            duration: CreekTracer.presentationInterval,
+            metrics: metrics
+        )
+        let expectedPacket = CreekTracer.packets(
+            projection: projection,
+            progresses: [expected],
+            reduceMotion: false
+        )[0]
+        #expect(staticPackets[index * 2].mark == .start)
+        #expect(staticPackets[index * 2 + 1].mark == .end)
+        #expect(staticPackets[index * 2 + 1].position == expectedPacket.position)
+    }
+}
+
 // Shape the Bend (3): retry preserves the evolved reach and requires a new
 // placement before another bounded experiment.
 @MainActor
@@ -209,6 +302,85 @@ func saveResume() throws {
     #expect(session.projection == saved)
     #expect(!session.hasCommittedAttempt)
     #expect(!session.attemptClosed)
+}
+
+@MainActor
+@Test("Comparison snapshot round-trips with committed attempt")
+func comparisonSnapshotRoundTrip() throws {
+    let store = MemorySnapshotStore()
+    let session = try SimulationSession(snapshotStore: store)
+    let before = session.projection
+    try session.placeRock(cell: 2)
+    _ = try session.commitShapeTheBendAttempt()
+    try session.save()
+    try session.load(BuiltInScenarios.shapeTheBend)
+
+    try session.resume()
+
+    #expect(session.comparisonBeforeProjection == before)
+    #expect(session.hasCommittedAttempt)
+}
+
+@MainActor
+@Test("Legacy snapshot without comparison restores with comparison unavailable")
+func legacySnapshotWithoutComparison() throws {
+    let store = MemorySnapshotStore()
+    let session = try SimulationSession(snapshotStore: store)
+    try session.placeRock(cell: 2)
+    _ = try session.commitShapeTheBendAttempt()
+    try session.save()
+    var json = try #require(JSONSerialization.jsonObject(with: store.data!) as? [String: Any])
+    json.removeValue(forKey: "comparisonBefore")
+    store.data = try JSONSerialization.data(withJSONObject: json)
+
+    try session.resume()
+
+    #expect(session.comparisonBeforeProjection == nil)
+    #expect(session.hasCommittedAttempt)
+}
+
+@MainActor
+@Test("Corrupt comparison snapshot is rejected without replacing live state")
+func corruptComparisonSnapshotRejected() throws {
+    let store = MemorySnapshotStore()
+    let session = try SimulationSession(snapshotStore: store)
+    try session.placeRock(cell: 2)
+    _ = try session.commitShapeTheBendAttempt()
+    try session.save()
+    try session.load(BuiltInScenarios.shapeTheBend)
+    let live = session.projection
+    var json = try #require(JSONSerialization.jsonObject(with: store.data!) as? [String: Any])
+    var comparison = try #require(json["comparisonBefore"] as? [String: Any])
+    comparison["schemaVersion"] = 999
+    json["comparisonBefore"] = comparison
+    store.data = try JSONSerialization.data(withJSONObject: json)
+
+    #expect(throws: Error.self) { try session.resume() }
+    #expect(session.projection == live)
+    #expect(session.comparisonBeforeProjection == nil)
+}
+
+@MainActor
+@Test("Comparison with impossible tick ordering is rejected")
+func comparisonTickOrderingRejected() throws {
+    let store = MemorySnapshotStore()
+    let session = try SimulationSession(snapshotStore: store)
+    try session.placeRock(cell: 2)
+    _ = try session.commitShapeTheBendAttempt()
+    try session.save()
+    let live = session.projection
+    var json = try #require(JSONSerialization.jsonObject(with: store.data!) as? [String: Any])
+    var comparison = try #require(json["comparisonBefore"] as? [String: Any])
+    var state = try #require(comparison["state"] as? [String: Any])
+    state["tick"] = 19
+    comparison["state"] = state
+    json["comparisonBefore"] = comparison
+    store.data = try JSONSerialization.data(withJSONObject: json)
+
+    #expect(throws: ShapeTheBendAttemptError.comparisonSnapshotMismatch) {
+        try session.resume()
+    }
+    #expect(session.projection == live)
 }
 
 @MainActor

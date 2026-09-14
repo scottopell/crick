@@ -107,6 +107,7 @@ private struct ClientSnapshot: Codable {
     let selectedRockCell: Int?
     let attemptPhase: SavedAttemptPhase
     let simulation: SimulationSnapshot
+    let comparisonBefore: SimulationSnapshot?
 }
 
 enum ShapeTheBendAttemptError: Error, Equatable {
@@ -116,6 +117,7 @@ enum ShapeTheBendAttemptError: Error, Equatable {
     case noAttemptToRetry
     case noAttemptToKeep
     case attemptClosed
+    case comparisonSnapshotMismatch
     case snapshotRockMismatch
     case objectiveNotHolding
 }
@@ -128,6 +130,7 @@ final class SimulationSession {
     private var simulator: Simulator
     private var selectedRockCell: Int?
     private var requiresNewPlacement = false
+    private var comparisonBeforeSnapshot: SimulationSnapshot?
     private let snapshotStore: any SnapshotStoring
 
     private(set) var projection: SimulationProjection
@@ -150,6 +153,14 @@ final class SimulationSession {
 
     var mustMoveStone: Bool { requiresNewPlacement }
 
+    // The comparison source is an immutable snapshot of the real flowing reach
+    // immediately before the player's first intervention in each bounded attempt.
+    var comparisonBeforeProjection: SimulationProjection? {
+        guard let comparisonBeforeSnapshot,
+              let before = try? comparisonBeforeSnapshot.restore() else { return nil }
+        return Self.project(scenarioName: projection.scenarioName, simulator: before)
+    }
+
     func attemptElapsedTicks(for projection: SimulationProjection) -> UInt64 {
         projection.tick >= attemptStartTick ? projection.tick - attemptStartTick : 0
     }
@@ -161,6 +172,7 @@ final class SimulationSession {
         let simulator = try Simulator(state: scenario.initialState)
         self.simulator = simulator
         self.selectedRockCell = nil
+        self.comparisonBeforeSnapshot = nil
         self.snapshotStore = snapshotStore
         self.canResume = snapshotStore.exists()
         self.projection = Self.project(
@@ -173,6 +185,7 @@ final class SimulationSession {
         simulator = try Simulator(state: scenario.initialState)
         selectedRockCell = nil
         requiresNewPlacement = false
+        comparisonBeforeSnapshot = nil
         hasCommittedAttempt = false
         attemptClosed = false
         attemptStartTick = 0
@@ -219,6 +232,9 @@ final class SimulationSession {
         guard eligibleStoneCells.contains(cell) else {
             throw ShapeTheBendAttemptError.ineligibleCell(cell)
         }
+        if comparisonBeforeSnapshot == nil {
+            comparisonBeforeSnapshot = SimulationSnapshot(simulator: simulator)
+        }
         try simulator.apply(ScheduledCommand(
             tick: simulator.state.tick,
             command: .moveRock(
@@ -245,6 +261,7 @@ final class SimulationSession {
         }
         hasCommittedAttempt = false
         requiresNewPlacement = true
+        comparisonBeforeSnapshot = SimulationSnapshot(simulator: simulator)
         message = "Move the stone to another spot"
     }
 
@@ -275,7 +292,8 @@ final class SimulationSession {
             scenarioName: projection.scenarioName,
             selectedRockCell: selectedRockCell,
             attemptPhase: savedPhase,
-            simulation: SimulationSnapshot(simulator: simulator)
+            simulation: SimulationSnapshot(simulator: simulator),
+            comparisonBefore: comparisonBeforeSnapshot
         )
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -290,6 +308,7 @@ final class SimulationSession {
             from: snapshotStore.load()
         )
         let restored = try snapshot.simulation.restore()
+        let comparisonRestored = try snapshot.comparisonBefore?.restore()
         let rockCells = restored.state.cells.indices.filter {
             restored.state.cells[$0].rockResistance > 0
         }
@@ -297,8 +316,27 @@ final class SimulationSession {
               rockCells.first == snapshot.selectedRockCell else {
             throw ShapeTheBendAttemptError.snapshotRockMismatch
         }
+        if let comparisonRestored {
+            let expectedTick: UInt64 = switch snapshot.attemptPhase {
+            case .outcome, .kept:
+                restored.state.tick >= Self.attemptTicks
+                    ? restored.state.tick - Self.attemptTicks
+                    : .max
+            case .arranging, .mustMove:
+                restored.state.tick
+            }
+            guard comparisonRestored.state.tick == expectedTick,
+                  comparisonRestored.state.seed == restored.state.seed,
+                  comparisonRestored.state.cells.count == restored.state.cells.count,
+                  comparisonRestored.state.forcing == restored.state.forcing,
+                  comparisonRestored.state.poolObjective == restored.state.poolObjective else {
+                throw ShapeTheBendAttemptError.comparisonSnapshotMismatch
+            }
+        }
+        // Both snapshots are restored and cross-validated before live state changes.
         simulator = restored
         selectedRockCell = snapshot.selectedRockCell
+        comparisonBeforeSnapshot = snapshot.comparisonBefore
         requiresNewPlacement = snapshot.attemptPhase == .mustMove
         hasCommittedAttempt = snapshot.attemptPhase == .outcome
         attemptClosed = snapshot.attemptPhase == .kept

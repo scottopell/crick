@@ -45,6 +45,12 @@ Apple references: [Cloud distribution](https://developer.apple.com/documentation
 
 The broader physical-device checklist and first-user questions remain in README.md. Touch, accessibility, heat/battery, and user understanding still need real-device evidence.
 
+## Tracer/comparison revision status
+
+The app now uses authored-centerline foam packets driven by immutable authoritative transfer/depth, captures the real flowing before state (including each evolved retry seam), and offers a bounded Before/After creek comparison before result reveal when comparison data is available. Reduce Motion uses static start/end travel-distance marks. The representative scripted failure is the clearly failed upstream seat rather than borderline cell 4.
+
+**Physical-feedback gate: NOT PASSED.** Simulator and automated checks cannot establish that players read the creek instead of relying on revealed result copy. Run the README acceptance study on physical devices before claiming this revision resolves that risk.
+
 ## Tester copy
 
 Beta description:
@@ -61,8 +67,12 @@ Use your feedback email and review contact in App Store Connect. Friends outside
 
 - Final archive: `/tmp/crick-beta-ready.xcarchive`
 - Final archive log: `/tmp/crick-beta-ready-archive.log`
-- Passing iPhone UI/app tests: `/tmp/crick-playtest-fixed-tests.xcresult`
-- Core tests: `/tmp/crick-playtest-swift-test.log`
+- Current iPhone 15 native/UI tests: `/tmp/crick-review-iphone15-final.log`
+- Current iPhone SE native/UI tests: `/tmp/crick-review-se-final.log`
+- Refreshed motion/comparison screenshots: `/tmp/crick-review-screens/`
+- Post-fix 6-second iPhone 15 foam recording: `/tmp/crick-tracer-flow.mp4`
+- Release package build: `/tmp/crick-review-release.log`
+- Core tests: `/tmp/crick-review-swift-test.log`
 - Additional device tests: `/tmp/crick-playtest-device-coverage.xcresult`
 
 These are local temporary artifacts, not uploaded builds.

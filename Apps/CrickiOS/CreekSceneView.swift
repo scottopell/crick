@@ -5,6 +5,8 @@ struct CreekSceneView: UIViewRepresentable {
     let projection: SimulationProjection
     let eligibleStoneCells: [Int]
     let allowsDragging: Bool
+    let reduceMotion: Bool
+    let revealsOutcome: Bool
     let onPlaceStone: (Int) -> Bool
 
     func makeCoordinator() -> Coordinator {
@@ -29,6 +31,8 @@ struct CreekSceneView: UIViewRepresentable {
         context.coordinator.view = view
         context.coordinator.eligibleStoneCells = eligibleStoneCells
         context.coordinator.allowsDragging = allowsDragging
+        context.coordinator.renderer.reduceMotion = reduceMotion
+        context.coordinator.renderer.revealsOutcome = revealsOutcome
         context.coordinator.update(projection: projection)
         return view
     }
@@ -37,6 +41,8 @@ struct CreekSceneView: UIViewRepresentable {
         context.coordinator.onPlaceStone = onPlaceStone
         context.coordinator.eligibleStoneCells = eligibleStoneCells
         context.coordinator.allowsDragging = allowsDragging
+        context.coordinator.renderer.reduceMotion = reduceMotion
+        context.coordinator.renderer.revealsOutcome = revealsOutcome
         context.coordinator.update(projection: projection)
     }
 
@@ -155,14 +161,38 @@ struct CreekVertex {
 final class CreekRenderer: NSObject, MTKViewDelegate {
     private var queue: MTLCommandQueue?
     private var pipeline: MTLRenderPipelineState?
-    private var vertices: [CreekVertex] = []
-    private var vertexBuffer: MTLBuffer?
+    private var staticVertices: [CreekVertex] = []
+    private var staticVertexBuffer: MTLBuffer?
+    private var foamVertices: [CreekVertex] = []
+    private static let maximumInFlightFrames = 3
+    private let inFlightSemaphore = DispatchSemaphore(value: maximumInFlightFrames)
+    private var foamVertexBuffers: [MTLBuffer?] = Array(
+        repeating: nil,
+        count: maximumInFlightFrames
+    )
+    private var foamVertexCapacities = Array(repeating: 0, count: maximumInFlightFrames)
+    private var nextFoamBufferIndex = 0
     private weak var view: MTKView?
     private(set) var projection: SimulationProjection?
     private(set) var isDragging = false
     private var dragPosition: SIMD2<Float>?
     private var eligibleStoneCells: [Int] = []
+    private var tracerProgress = CreekTracer.seeds
+    private var lastFrameTime: CFTimeInterval?
     private let started = CACurrentMediaTime()
+    var reduceMotion = false {
+        didSet {
+            guard reduceMotion != oldValue else { return }
+            lastFrameTime = nil
+            rebuildFoam()
+        }
+    }
+    var revealsOutcome = false {
+        didSet {
+            guard revealsOutcome != oldValue else { return }
+            rebuildStaticScene()
+        }
+    }
 
     func attach(to view: MTKView) {
         self.view = view
@@ -211,16 +241,21 @@ final class CreekRenderer: NSObject, MTKViewDelegate {
     }
 
     func update(projection: SimulationProjection) {
+        guard projection != self.projection else { return }
         self.projection = projection
         if !isDragging {
             dragPosition = nil
         }
-        rebuild()
+        // Cosmetic packet progress is renderer-owned. Projection playback and
+        // Before/After transitions change speed, never packet position.
+        rebuildStaticScene()
+        rebuildFoam()
     }
 
     func updateEligibleStoneCells(_ cells: [Int]) {
+        guard cells != eligibleStoneCells else { return }
         eligibleStoneCells = cells
-        rebuild()
+        rebuildStaticScene()
     }
 
     func beginDrag(at point: CGPoint, viewport: CGSize) {
@@ -233,7 +268,7 @@ final class CreekRenderer: NSObject, MTKViewDelegate {
             Float(point.x / viewport.width) * 2 - 1,
             1 - Float(point.y / viewport.height) * 2
         )
-        rebuild()
+        rebuildStaticScene()
     }
 
     // Shape the Bend (4): preserve the dropped location until the synchronous
@@ -247,43 +282,104 @@ final class CreekRenderer: NSObject, MTKViewDelegate {
         } else {
             dragPosition = nil
         }
-        rebuild()
+        rebuildStaticScene()
     }
 
-    private func rebuild() {
+    private func rebuildStaticScene() {
         guard let projection else { return }
-        vertices = CreekMesh.make(
+        staticVertices = CreekMesh.makeStatic(
             projection: projection,
             draggedStone: dragPosition,
-            eligibleStoneCells: isDragging ? eligibleStoneCells : []
+            eligibleStoneCells: isDragging ? eligibleStoneCells : [],
+            revealsOutcome: revealsOutcome
         )
         guard let device = view?.device else { return }
-        vertexBuffer = device.makeBuffer(
-            bytes: vertices,
-            length: MemoryLayout<CreekVertex>.stride * vertices.count,
+        staticVertexBuffer = device.makeBuffer(
+            bytes: staticVertices,
+            length: MemoryLayout<CreekVertex>.stride * staticVertices.count,
             options: .storageModeShared
         )
+    }
+
+    private func rebuildFoam() {
+        guard let projection else { return }
+        let pairs = CreekTracer.packets(
+            projection: projection,
+            progresses: tracerProgress,
+            reduceMotion: reduceMotion
+        )
+        foamVertices = CreekMesh.makeFoam(pairs)
     }
 
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {}
 
     func draw(in view: MTKView) {
-        guard let pipeline, let queue,
+        let now = CACurrentMediaTime()
+        if !reduceMotion, let projection {
+            // Cap cosmetic time so foregrounding never catches up elapsed wall time.
+            let dt = min(Float(max(0, now - (lastFrameTime ?? now))), 1.0 / 15.0)
+            let metrics = CreekTracer.speedMetrics(for: projection)
+            tracerProgress = tracerProgress.map {
+                CreekTracer.advancedProgress(from: $0, duration: dt, metrics: metrics)
+            }
+            rebuildFoam()
+        }
+        lastFrameTime = now
+
+        guard let pipeline, let queue, let device = view.device,
               let drawable = view.currentDrawable,
               let pass = view.currentRenderPassDescriptor,
-              !vertices.isEmpty,
-              let vertexBuffer,
-              let command = queue.makeCommandBuffer(),
+              !staticVertices.isEmpty,
+              let staticVertexBuffer else {
+            return
+        }
+
+        inFlightSemaphore.wait()
+        var commandSubmitted = false
+        defer {
+            if !commandSubmitted {
+                inFlightSemaphore.signal()
+            }
+        }
+
+        let foamBufferIndex = nextFoamBufferIndex
+        nextFoamBufferIndex = (nextFoamBufferIndex + 1) % Self.maximumInFlightFrames
+        let foamByteCount = MemoryLayout<CreekVertex>.stride * foamVertices.count
+        if foamByteCount > foamVertexCapacities[foamBufferIndex] {
+            foamVertexBuffers[foamBufferIndex] = device.makeBuffer(
+                length: foamByteCount,
+                options: .storageModeShared
+            )
+            foamVertexCapacities[foamBufferIndex] = foamByteCount
+        }
+        if foamByteCount > 0, let foamVertexBuffer = foamVertexBuffers[foamBufferIndex] {
+            foamVertices.withUnsafeBytes { bytes in
+                foamVertexBuffer.contents().copyMemory(
+                    from: bytes.baseAddress!,
+                    byteCount: foamByteCount
+                )
+            }
+        }
+
+        guard let command = queue.makeCommandBuffer(),
               let encoder = command.makeRenderCommandEncoder(descriptor: pass) else {
             return
         }
         encoder.setRenderPipelineState(pipeline)
-        encoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
-        var time = Float(CACurrentMediaTime() - started)
-        encoder.setFragmentBytes(&time, length: MemoryLayout<Float>.size, index: 0)
-        encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: vertices.count)
+        var shaderTime = reduceMotion ? Float(0) : Float(now - started)
+        encoder.setFragmentBytes(&shaderTime, length: MemoryLayout<Float>.size, index: 0)
+        encoder.setVertexBuffer(staticVertexBuffer, offset: 0, index: 0)
+        encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: staticVertices.count)
+        if foamByteCount > 0, let foamVertexBuffer = foamVertexBuffers[foamBufferIndex] {
+            encoder.setVertexBuffer(foamVertexBuffer, offset: 0, index: 0)
+            encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: foamVertices.count)
+        }
         encoder.endEncoding()
         command.present(drawable)
+        command.addCompletedHandler { [inFlightSemaphore] _ in
+            inFlightSemaphore.signal()
+        }
+        commandSubmitted = true
         command.commit()
     }
 }
@@ -300,11 +396,128 @@ enum CreekLayout {
     }
 }
 
+enum CreekTracerMark: Equatable {
+    case moving
+    case start
+    case end
+}
+
+struct CreekTracerPacket: Equatable {
+    let position: SIMD2<Float>
+    let direction: SIMD2<Float>
+    let mark: CreekTracerMark
+}
+
+enum CreekTracer {
+    static let seeds: [Float] = [0.04, 0.24, 0.44, 0.64, 0.84]
+    static let presentationInterval: Float = 2.5
+    private static let speedScale: Float = 0.42
+
+    // The target segment deliberately uses CreekCore's exact objective calmness.
+    // Every other segment uses the identical transfer/depth definition.
+    static func speedMetrics(for projection: SimulationProjection) -> [Double] {
+        guard projection.cells.count > 1 else { return [] }
+        return (0..<(projection.cells.count - 1)).map { index in
+            if index == projection.poolObjective?.targetCell,
+               let calmness = projection.poolObjective?.calmness {
+                return calmness
+            }
+            let depth = (projection.cells[index].waterDepth
+                + projection.cells[index + 1].waterDepth) * 0.5
+            let transfer = projection.waterTransfers.indices.contains(index)
+                ? projection.waterTransfers[index] : 0
+            return depth > 0 ? transfer / depth : 0
+        }
+    }
+
+    // Integrates piecewise-constant segment speeds without numerical stepping.
+    // Callers bound frame duration; every crossed segment boundary is exact.
+    static func advancedProgress(
+        from initialProgress: Float,
+        duration: Float,
+        metrics: [Double]
+    ) -> Float {
+        guard !metrics.isEmpty, duration > 0 else { return normalized(initialProgress) }
+        var progress = normalized(initialProgress)
+        var remaining = duration
+        let segmentWidth = 1 / Float(metrics.count)
+
+        while remaining > 0 {
+            var index = min(metrics.count - 1, Int(progress / segmentWidth))
+            // A computed boundary can divide just below its integral segment
+            // index in Float. Classify equality into the following segment so
+            // a zero-distance crossing cannot leave this loop stalled.
+            while index < metrics.count - 1,
+                  progress >= Float(index + 1) * segmentWidth {
+                index += 1
+            }
+            let speed = max(0, Float(metrics[index])) * speedScale
+            guard speed > 0 else { return progress }
+            let boundary = Float(index + 1) * segmentWidth
+            let timeToBoundary = (boundary - progress) / speed
+            if remaining <= timeToBoundary {
+                progress += speed * remaining
+                remaining = 0
+            } else {
+                remaining -= timeToBoundary
+                progress = index == metrics.count - 1 ? 0 : boundary
+            }
+        }
+        return normalized(progress)
+    }
+
+    static func packets(
+        projection: SimulationProjection,
+        progresses: [Float],
+        reduceMotion: Bool
+    ) -> [CreekTracerPacket] {
+        let anchors = CreekLayout.anchors(count: projection.cells.count)
+        guard anchors.count > 1 else { return [] }
+        let metrics = speedMetrics(for: projection)
+        return progresses.flatMap { progress -> [CreekTracerPacket] in
+            if reduceMotion {
+                let end = advancedProgress(
+                    from: progress,
+                    duration: presentationInterval,
+                    metrics: metrics
+                )
+                return [
+                    packet(at: progress, anchors: anchors, mark: .start),
+                    packet(at: end, anchors: anchors, mark: .end),
+                ]
+            }
+            return [packet(at: progress, anchors: anchors, mark: .moving)]
+        }
+    }
+
+    private static func normalized(_ progress: Float) -> Float {
+        let remainder = progress.truncatingRemainder(dividingBy: 1)
+        return remainder >= 0 ? remainder : remainder + 1
+    }
+
+    private static func packet(
+        at progress: Float,
+        anchors: [SIMD2<Float>],
+        mark: CreekTracerMark
+    ) -> CreekTracerPacket {
+        let scaled = min(0.9999, max(0, progress)) * Float(anchors.count - 1)
+        let index = min(anchors.count - 2, Int(scaled))
+        let local = scaled - Float(index)
+        let direction = simd_normalize(anchors[index + 1] - anchors[index])
+        return CreekTracerPacket(
+            position: simd_mix(anchors[index], anchors[index + 1], SIMD2(repeating: local)),
+            direction: direction,
+            mark: mark
+        )
+    }
+}
+
 enum CreekMesh {
-    static func make(
+    static func makeStatic(
         projection: SimulationProjection,
         draggedStone: SIMD2<Float>? = nil,
-        eligibleStoneCells: [Int] = []
+        eligibleStoneCells: [Int] = [],
+        revealsOutcome: Bool = false
     ) -> [CreekVertex] {
         guard !projection.cells.isEmpty else { return [] }
         var result: [CreekVertex] = []
@@ -369,7 +582,7 @@ enum CreekMesh {
 
         let targetCell = projection.poolObjective?.targetCell
         if let targetCell, anchors.indices.contains(targetCell) {
-            let holding = projection.poolObjective?.status == .holding
+            let holding = revealsOutcome && projection.poolObjective?.status == .holding
             ring(
                 &result,
                 center: anchors[targetCell],
@@ -406,6 +619,19 @@ enum CreekMesh {
         let shadow = stonePosition + SIMD2<Float>(0.026, -0.035)
         stone(&result, center: shadow, radius: 0.12, color: [0.02, 0.03, 0.02, 0.58])
         stone(&result, center: stonePosition, radius: 0.11, color: rock)
+        return result
+    }
+
+    static func makeFoam(_ packets: [CreekTracerPacket]) -> [CreekVertex] {
+        var result: [CreekVertex] = []
+        for packet in packets {
+            foamPacket(
+                &result,
+                center: packet.position,
+                direction: packet.direction,
+                mark: packet.mark
+            )
+        }
         return result
     }
 
@@ -503,6 +729,29 @@ enum CreekMesh {
         center: SIMD2<Float>, radius: Float, color: SIMD4<Float>
     ) {
         stone(&vertices, center: center, radius: radius, color: color)
+    }
+
+    private static func foamPacket(
+        _ vertices: inout [CreekVertex],
+        center: SIMD2<Float>,
+        direction: SIMD2<Float>,
+        mark: CreekTracerMark
+    ) {
+        let side = SIMD2<Float>(-direction.y, direction.x)
+        let color: SIMD4<Float>
+        switch mark {
+        case .moving:
+            color = SIMD4<Float>(0.88, 0.96, 0.88, 0.88)
+        case .start:
+            color = SIMD4<Float>(0.98, 0.80, 0.34, 0.96)
+        case .end:
+            color = SIMD4<Float>(0.45, 0.96, 0.92, 0.96)
+        }
+        pebble(&vertices, center: center, radius: mark == .start ? 0.022 : 0.026, color: color)
+        if mark != .start {
+            pebble(&vertices, center: center - direction * 0.026 + side * 0.014, radius: 0.017, color: color)
+            pebble(&vertices, center: center - direction * 0.052 - side * 0.010, radius: 0.012, color: color)
+        }
     }
 
     private static func polygonQuad(

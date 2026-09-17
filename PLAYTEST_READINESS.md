@@ -14,6 +14,8 @@ The delivery-documentation commit carrying this section is an intentional new pu
 
 Updated 2026-09-16. This document replaces the stale build-1 distribution checklist; historical text remains in git.
 
+Build 8 is a local, uncommitted barrier-follow-up candidate only. It doubles future digging scoops to `0.11` while preserving the absolute `0.44` cap and old snapshot terrain, adds actual-relief/local-barrier rendering, and leaves fluid stepping unchanged. The exact reported tick-540 state has a byte-identical core fixture regression and is also a native test-bundle resource for resume through injected `MemorySnapshotStore`. Final current-tree evidence in `/Users/scottopell/dev/crick-builds/barrier-fix-build8-final` is: package 42/42; iPhone 15 Pro and iPhone SE (3rd generation) iOS 17.5, 30/30 each (28 native + 2 UI), with exact-fixture before/after rendered attachments retained and inspected. No archive, cloud, upload, signing, provisioning, credentials, or physical-device operation was performed for build 8; the installed-phone statement above remains about build 7 only.
+
 ## What is ready
 
 The app launches into **Dig the Bend**, an unscored 20 × 26 surface-water experiment. The old **Shape the Bend** experience remains available from the Creek menu. The experiment is intended for personal exploratory evaluation, not cohort acceptance. Its normal delivery channel is the existing main-to-TestFlight workflow described above; the local development-signed build is only a temporary alternative.

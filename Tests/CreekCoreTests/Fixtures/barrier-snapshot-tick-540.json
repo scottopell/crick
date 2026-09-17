@@ -1,0 +1,5078 @@
+{
+  "kind" : "digging-surface",
+  "schemaVersion" : 1,
+  "world" : {
+    "cells" : [
+      {
+        "authoredGroundHeight" : 1.8952391817056307,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.8952391817056307,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7942934420502075,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7942934420502075,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7037502547663588,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7037502547663588,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.5826225342451705,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5826225342451705,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.4472530702553992,
+        "flowX" : -0.00214789067161038,
+        "flowY" : 0.002148508587843352,
+        "groundHeight" : 1.4472530702553992,
+        "waterDepth" : 0.10244162408305003
+      },
+      {
+        "authoredGroundHeight" : 1.343,
+        "flowX" : 2.0020920948155777e-05,
+        "flowY" : 0.0038665048519884748,
+        "groundHeight" : 1.343,
+        "waterDepth" : 0.2118176928838426
+      },
+      {
+        "authoredGroundHeight" : 1.4442530702553993,
+        "flowX" : 0.002167911592558536,
+        "flowY" : 0.002168549420258164,
+        "groundHeight" : 1.4442530702553993,
+        "waterDepth" : 0.10533623090343515
+      },
+      {
+        "authoredGroundHeight" : 1.5766225342451705,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5766225342451705,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.6947502547663587,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.6947502547663587,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.8032934420502076,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.8032934420502076,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.9012391817056307,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.9012391817056307,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.032789080692898,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.032789080692898,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.155139514297134,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.155139514297134,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.309500105090347,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.309500105090347,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.3399999999999994,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.3399999999999994,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.3489999999999998,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.3489999999999998,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.3579999999999997,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.3579999999999997,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.3459999999999996,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.3459999999999996,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.355,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.355,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.343,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.343,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.8812391817056306,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.8812391817056306,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7592934420502075,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7592934420502075,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.6687502547663586,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.6687502547663586,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.5686225342451705,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5686225342451705,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.4122530702553993,
+        "flowX" : -0.00042989440746525696,
+        "flowY" : 0.004728141687583572,
+        "groundHeight" : 1.4122530702553993,
+        "waterDepth" : 0.12413307195883364
+      },
+      {
+        "authoredGroundHeight" : 1.329,
+        "flowX" : 4.0061753362967694e-05,
+        "flowY" : 0.006834294200547214,
+        "groundHeight" : 1.329,
+        "waterDepth" : 0.21164883939835477
+      },
+      {
+        "authoredGroundHeight" : 1.4092530702553991,
+        "flowX" : 0.00046995616082822465,
+        "flowY" : 0.004808324522927053,
+        "groundHeight" : 1.4092530702553991,
+        "waterDepth" : 0.12692218120819349
+      },
+      {
+        "authoredGroundHeight" : 1.5626225342451705,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5626225342451705,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.6597502547663587,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.6597502547663587,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7682934420502074,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7682934420502074,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.8872391817056307,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.8872391817056307,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.9977890806928973,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.9977890806928973,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.1411395142971337,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.1411395142971337,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.274500105090347,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.274500105090347,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.3259999999999996,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.3259999999999996,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.314,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.314,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.323,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.323,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.332,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.332,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.32,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.32,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.329,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.329,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.8462391817056305,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.8462391817056305,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7452934420502075,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7452934420502075,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.6337502547663587,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.6337502547663587,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.5336225342451704,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5336225342451704,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.3982530702553992,
+        "flowX" : -4.173815864673835e-05,
+        "flowY" : 0.005202929456604189,
+        "groundHeight" : 1.3982530702553992,
+        "waterDepth" : 0.12255536065036614
+      },
+      {
+        "authoredGroundHeight" : 1.294,
+        "flowX" : 0.0001002037562916369,
+        "flowY" : 0.005753927597454143,
+        "groundHeight" : 1.294,
+        "waterDepth" : 0.22902800154951375
+      },
+      {
+        "authoredGroundHeight" : 1.3952530702553991,
+        "flowX" : 0.00014194191493837525,
+        "flowY" : 0.005423514754274319,
+        "groundHeight" : 1.3952530702553991,
+        "waterDepth" : 0.12502787492383635
+      },
+      {
+        "authoredGroundHeight" : 1.5276225342451704,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5276225342451704,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.6457502547663587,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.6457502547663587,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7332934420502075,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7332934420502075,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.8522391817056305,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.8522391817056305,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.9837890806928975,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.9837890806928975,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.1061395142971335,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.1061395142971335,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.260500105090347,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.260500105090347,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.2909999999999995,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.2909999999999995,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.3,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.3,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.288,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.288,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.2969999999999997,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.2969999999999997,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.3059999999999996,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.3059999999999996,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.2939999999999996,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.2939999999999996,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.8322391817056305,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.8322391817056305,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7102934420502074,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7102934420502074,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.6197502547663587,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.6197502547663587,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.4986225342451704,
+        "flowX" : -0.0006268425223056332,
+        "flowY" : 0.0006274600417439588,
+        "groundHeight" : 1.4986225342451704,
+        "waterDepth" : 0.0010812101387409137
+      },
+      {
+        "authoredGroundHeight" : 1.363253070255399,
+        "flowX" : -0.0006268425223056332,
+        "flowY" : 0.004622245666418711,
+        "groundHeight" : 1.363253070255399,
+        "waterDepth" : 0.14174796734298378
+      },
+      {
+        "authoredGroundHeight" : 1.28,
+        "flowX" : 0.000139543317648401,
+        "flowY" : 0.0054357436478714785,
+        "groundHeight" : 1.28,
+        "waterDepth" : 0.2263631345352044
+      },
+      {
+        "authoredGroundHeight" : 1.3602530702553992,
+        "flowX" : 0.000139543317648401,
+        "flowY" : 0.005709769291755854,
+        "groundHeight" : 1.3602530702553992,
+        "waterDepth" : 0.14337588956269873
+      },
+      {
+        "authoredGroundHeight" : 1.5136225342451703,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5136225342451703,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.6107502547663586,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.6107502547663586,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7192934420502075,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7192934420502075,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.8172391817056306,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.8172391817056306,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.9487890806928971,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.9487890806928971,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.0921395142971333,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.0921395142971333,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.2255001050903465,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.2255001050903465,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.2769999999999997,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.2769999999999997,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.265,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.265,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.274,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.274,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.262,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.262,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.271,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.271,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.28,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.28,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7972391817056306,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7972391817056306,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.6962934420502074,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.6962934420502074,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.5847502547663586,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5847502547663586,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.4846225342451704,
+        "flowX" : -0.00017699126331058223,
+        "flowY" : 0.0014386691868321045,
+        "groundHeight" : 1.4846225342451704,
+        "waterDepth" : 0.004921922183620905
+      },
+      {
+        "authoredGroundHeight" : 1.3282530702553992,
+        "flowX" : -0.00016523144050455184,
+        "flowY" : 0.0038140619723344782,
+        "groundHeight" : 1.3282530702553992,
+        "waterDepth" : 0.1642247625388766
+      },
+      {
+        "authoredGroundHeight" : 1.2449999999999999,
+        "flowX" : 0.0004277273816287803,
+        "flowY" : 0.0048992214323519846,
+        "groundHeight" : 1.2449999999999999,
+        "waterDepth" : 0.24541663505895886
+      },
+      {
+        "authoredGroundHeight" : 1.3462530702553992,
+        "flowX" : 0.0012185186443847502,
+        "flowY" : 0.005468648155753602,
+        "groundHeight" : 1.3462530702553992,
+        "waterDepth" : 0.13997530783061168
+      },
+      {
+        "authoredGroundHeight" : 1.4786225342451704,
+        "flowX" : 0.0008025510855620003,
+        "flowY" : 0.0008033366334537935,
+        "groundHeight" : 1.4786225342451704,
+        "waterDepth" : 0.001384277613235437
+      },
+      {
+        "authoredGroundHeight" : 1.5967502547663586,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5967502547663586,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.6842934420502074,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.6842934420502074,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.8032391817056306,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.8032391817056306,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.9137890806928974,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.9137890806928974,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.0571395142971336,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.0571395142971336,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.2115001050903467,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.2115001050903467,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.241999999999999,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.241999999999999,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.251,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.251,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.239,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.239,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.2479999999999998,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.2479999999999998,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.2359999999999998,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.2359999999999998,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.2449999999999997,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.2449999999999997,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7832391817056308,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7832391817056308,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.6612934420502077,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.6612934420502077,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.5707502547663588,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5707502547663588,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.4496225342451705,
+        "flowX" : 6.691225438100889e-05,
+        "flowY" : 0.001562140189005386,
+        "groundHeight" : 1.4496225342451705,
+        "waterDepth" : 0.03365252405419087
+      },
+      {
+        "authoredGroundHeight" : 1.3142530702553994,
+        "flowX" : 0.0005131754477832125,
+        "flowY" : 0.003256997957715174,
+        "groundHeight" : 1.3142530702553994,
+        "waterDepth" : 0.16667032886609529
+      },
+      {
+        "authoredGroundHeight" : 1.2100000000000002,
+        "flowX" : 0.0011552332344522227,
+        "flowY" : 0.004242243944507328,
+        "groundHeight" : 1.2100000000000002,
+        "waterDepth" : 0.26657505031778284
+      },
+      {
+        "authoredGroundHeight" : 1.3112530702553993,
+        "flowX" : 0.0011152268253376192,
+        "flowY" : 0.0053928437520141675,
+        "groundHeight" : 1.3112530702553993,
+        "waterDepth" : 0.15959138405505738
+      },
+      {
+        "authoredGroundHeight" : 1.4646225342451706,
+        "flowX" : 0.00040625678428760006,
+        "flowY" : 0.0020147361915879938,
+        "groundHeight" : 1.4646225342451706,
+        "waterDepth" : 0.0020868137874247806
+      },
+      {
+        "authoredGroundHeight" : 1.5617502547663589,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5617502547663589,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.6702934420502076,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.6702934420502076,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7682391817056307,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7682391817056307,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.8997890806928976,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.8997890806928976,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.022139514297134,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.022139514297134,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.176500105090347,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.176500105090347,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.2279999999999993,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.2279999999999993,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.2159999999999997,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.2159999999999997,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.225,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.225,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.213,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.213,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.222,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.222,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.21,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.21,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7847501590384884,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7847501590384884,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.6798673918005127,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.6798673918005127,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.5659749336281086,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5659749336281086,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.4726897319946577,
+        "flowX" : 0.0007578665053992054,
+        "flowY" : 0.0007509310439172404,
+        "groundHeight" : 1.4726897319946577,
+        "waterDepth" : 0.0046327563442359184
+      },
+      {
+        "authoredGroundHeight" : 1.3257406254068862,
+        "flowX" : 0.0017548723149973895,
+        "flowY" : 0.0026517733466275223,
+        "groundHeight" : 1.3257406254068862,
+        "waterDepth" : 0.14559288525148542
+      },
+      {
+        "authoredGroundHeight" : 1.208004282987028,
+        "flowX" : 0.0025635731759277745,
+        "flowY" : 0.0034232467512569594,
+        "groundHeight" : 1.208004282987028,
+        "waterDepth" : 0.2560814182486883
+      },
+      {
+        "authoredGroundHeight" : 1.2339498998106446,
+        "flowX" : 0.003471322670007975,
+        "flowY" : 0.0053710583256099745,
+        "groundHeight" : 1.2339498998106446,
+        "waterDepth" : 0.2198894667189259
+      },
+      {
+        "authoredGroundHeight" : 1.3882113136081955,
+        "flowX" : 0.0019047553036783851,
+        "flowY" : 0.004340401945193086,
+        "groundHeight" : 1.3882113136081955,
+        "waterDepth" : 0.05359897327216871
+      },
+      {
+        "authoredGroundHeight" : 1.516841495651743,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.516841495651743,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.603830026799216,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.603830026799216,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7189379168519685,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7189379168519685,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.8256647811541393,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.8256647811541393,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.9654650906465945,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.9654650906465945,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.0955022556040657,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.0955022556040657,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.192999999999996,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.192999999999996,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.202,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.202,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.19,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.19,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.1990000000000003,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.1990000000000003,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.1870000000000003,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.1870000000000003,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.196,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.196,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.8533610307661381,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.8533610307661381,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7387555857990475,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7387555857990475,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.6454135823736287,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.6454135823736287,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.542337065630195,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.542337065630195,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.4445096954499759,
+        "flowX" : 0.0012177365980316406,
+        "flowY" : 0.0012098880516920854,
+        "groundHeight" : 1.4445096954499759,
+        "waterDepth" : 0.018455276872000687
+      },
+      {
+        "authoredGroundHeight" : 1.2822452370167785,
+        "flowX" : 0.0038745182134346757,
+        "flowY" : 0.0014306188401255419,
+        "groundHeight" : 1.2822452370167785,
+        "waterDepth" : 0.1723100176846516
+      },
+      {
+        "authoredGroundHeight" : 1.1727789926392798,
+        "flowX" : 0.0051697062169413196,
+        "flowY" : 0.005195249367464983,
+        "groundHeight" : 1.1727789926392798,
+        "waterDepth" : 0.26579190093049365
+      },
+      {
+        "authoredGroundHeight" : 1.2307907935977964,
+        "flowX" : 0.005319735790178007,
+        "flowY" : 0.00597525663725572,
+        "groundHeight" : 1.2307907935977964,
+        "waterDepth" : 0.1925527687414752
+      },
+      {
+        "authoredGroundHeight" : 1.3859451194907233,
+        "flowX" : 0.002806811188639722,
+        "flowY" : 0.0028178129892028328,
+        "groundHeight" : 1.3859451194907233,
+        "waterDepth" : 0.020625889031699804
+      },
+      {
+        "authoredGroundHeight" : 1.5083015327159217,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5083015327159217,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.5953226564967191,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5953226564967191,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7125562589772525,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7125562589772525,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.8214345075446536,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.8214345075446536,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.9632324440874875,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.9632324440874875,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.0951384774799244,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.0951384774799244,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.1669999999999985,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.1669999999999985,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.1759999999999997,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.1759999999999997,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.1639999999999997,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.1639999999999997,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.173,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.173,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.161,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.161,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.0034041369523625,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.0034041369523625,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.8533038364333903,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.8533038364333903,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7357225451340756,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7357225451340756,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.6467025967373532,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.6467025967373532,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.551237491317867,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.551237491317867,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.4633073748947285,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.4633073748947285,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.2986413476035927,
+        "flowX" : 0.002684762573469122,
+        "flowY" : 0.002674416278265997,
+        "groundHeight" : 1.2986413476035927,
+        "waterDepth" : 0.1238530506974115
+      },
+      {
+        "authoredGroundHeight" : 1.1577763153500154,
+        "flowX" : 0.005463132501114843,
+        "flowY" : 0.0056096365862032295,
+        "groundHeight" : 1.1577763153500154,
+        "waterDepth" : 0.24858736447215785
+      },
+      {
+        "authoredGroundHeight" : 1.1789185634410202,
+        "flowX" : 0.0056261639281588146,
+        "flowY" : 0.005576804551357769,
+        "groundHeight" : 1.1789185634410202,
+        "waterDepth" : 0.2108222495561317
+      },
+      {
+        "authoredGroundHeight" : 1.332713810399146,
+        "flowX" : 0.0028477940005130933,
+        "flowY" : 0.002858010469255572,
+        "groundHeight" : 1.332713810399146,
+        "waterDepth" : 0.0400389992986982
+      },
+      {
+        "authoredGroundHeight" : 1.4623038397192125,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.4623038397192125,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.5493550823135886,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5493550823135886,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.6641666925973333,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.6641666925973333,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7705841337235528,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7705841337235528,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.9100970342631534,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.9100970342631534,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.0398655716823084,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.0398655716823084,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.140999999999995,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.140999999999995,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.15,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.15,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.138,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.138,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.1470000000000002,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.1470000000000002,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.1089999999999973,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.1089999999999973,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.038622062369581,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.038622062369581,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.8839151426204432,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.8839151426204432,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7613985524997702,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7613985524997702,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.6634139408813766,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.6634139408813766,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.5725562217577524,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5725562217577524,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.510647250849682,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.510647250849682,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.3563278799186904,
+        "flowX" : 0.002773979153794262,
+        "flowY" : 0.002763382336006395,
+        "groundHeight" : 1.3563278799186904,
+        "waterDepth" : 0.03349182096775273
+      },
+      {
+        "authoredGroundHeight" : 1.1758018665521288,
+        "flowX" : 0.005720792061407992,
+        "flowY" : 0.005355333322394611,
+        "groundHeight" : 1.1758018665521288,
+        "waterDepth" : 0.1974183569170702
+      },
+      {
+        "authoredGroundHeight" : 1.1140531210432791,
+        "flowX" : 0.006505607104727012,
+        "flowY" : 0.005113589036552971,
+        "groundHeight" : 1.1140531210432791,
+        "waterDepth" : 0.2416581953712632
+      },
+      {
+        "authoredGroundHeight" : 1.2443612530539496,
+        "flowX" : 0.003558794197113282,
+        "flowY" : 0.003567364463977647,
+        "groundHeight" : 1.2443612530539496,
+        "waterDepth" : 0.09062054670698912
+      },
+      {
+        "authoredGroundHeight" : 1.3905987544804779,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.335598754480478,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.481935878725518,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.426935878725518,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.5922577165998733,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5372577165998733,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.6933523750312354,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.6383523750312354,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.8278982501621128,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7728982501621129,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.953034434499507,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.898034434499507,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.110009580881103,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.110009580881103,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.1239999999999997,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.1239999999999997,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.1119999999999997,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.1119999999999997,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.095,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.095,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.083,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.083,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.0870095808811033,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.0870095808811033,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.9270344344995072,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.9270344344995072,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7988982501621131,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7988982501621131,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.682352375031236,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.682352375031236,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.5928396096039887,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5928396096039887,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.5378511050629664,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5378511050629664,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.4260168614763626,
+        "flowX" : 0.0026060497146714527,
+        "flowY" : 0.0025963417602396757,
+        "groundHeight" : 1.3160168614763628,
+        "waterDepth" : 0.041538881357468214
+      },
+      {
+        "authoredGroundHeight" : 1.2604460267165016,
+        "flowX" : 0.007476629808464983,
+        "flowY" : 0.0022555785672973986,
+        "groundHeight" : 1.1504460267165018,
+        "waterDepth" : 0.19139442113008676
+      },
+      {
+        "authoredGroundHeight" : 1.0880531210432791,
+        "flowX" : 0.009093218276822124,
+        "flowY" : 0.00779000264700624,
+        "groundHeight" : 1.0880531210432791,
+        "waterDepth" : 0.2261543147342505
+      },
+      {
+        "authoredGroundHeight" : 1.1468018665521282,
+        "flowX" : 0.004222638183028593,
+        "flowY" : 0.004228426393244091,
+        "groundHeight" : 1.1468018665521282,
+        "waterDepth" : 0.14318270133384772
+      },
+      {
+        "authoredGroundHeight" : 1.301841460165604,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.301841460165604,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.4071336706027682,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.4071336706027682,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.5150426415108385,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5150426415108385,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.6099003606344626,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.6099003606344626,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.73839855249977,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.73839855249977,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.857915142620443,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.857915142620443,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.009622062369581,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.009622062369581,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.097999999999997,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.097999999999997,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.0599999999999996,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.0599999999999996,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.069,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.069,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.057,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.057,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.065999999999995,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.065999999999995,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.9618655716823081,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.9618655716823081,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.829097034263153,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.829097034263153,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7075841337235527,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7075841337235527,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.5970778037084443,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5970778037084443,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.537599526758033,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.427599526758033,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.461392728608101,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.3513927286081011,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.3124693659547013,
+        "flowX" : 0.004228426393244091,
+        "flowY" : 0.004222638183028593,
+        "groundHeight" : 1.2574693659547014,
+        "waterDepth" : 0.032515201931274614
+      },
+      {
+        "authoredGroundHeight" : 1.1009185634410201,
+        "flowX" : 0.010801468323130607,
+        "flowY" : 0.00611629403046538,
+        "groundHeight" : 1.1009185634410201,
+        "waterDepth" : 0.16481286012063542
+      },
+      {
+        "authoredGroundHeight" : 1.0767763153500152,
+        "flowX" : 0.008383932204289757,
+        "flowY" : 0.004765657756938502,
+        "groundHeight" : 1.0767763153500152,
+        "waterDepth" : 0.15236070136508623
+      },
+      {
+        "authoredGroundHeight" : 1.2144857920480374,
+        "flowX" : 0.0018108902744032411,
+        "flowY" : 0.0018117630080891768,
+        "groundHeight" : 1.2144857920480374,
+        "waterDepth" : 0.0031228565906057486
+      },
+      {
+        "authoredGroundHeight" : 1.3364851526725063,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.3364851526725063,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.4473930468734226,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.4473930468734226,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.5375248189595752,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5375248189595752,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.6607225451340757,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.6607225451340757,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7753038364333904,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7753038364333904,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.9224041369523626,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.9224041369523626,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.046,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.046,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.034,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.034,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.043,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.043,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.031,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.031,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.0399999999999987,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.0399999999999987,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.9651384774799245,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.9651384774799245,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.8302324440874873,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.8302324440874873,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7064345075446536,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7064345075446536,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.5829587281130548,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.472958728113055,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.511725125632521,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.456725125632521,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.4287040018517239,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.373704001851724,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.3055426503549208,
+        "flowX" : 0.001888877026410958,
+        "flowY" : 0.001887867637221288,
+        "groundHeight" : 1.2505426503549208,
+        "waterDepth" : 0.0032556751391050855
+      },
+      {
+        "authoredGroundHeight" : 1.1193883244619938,
+        "flowX" : 0.00854887794013605,
+        "flowY" : 0.004765657756938502,
+        "groundHeight" : 1.1193883244619938,
+        "waterDepth" : 0.0826643229771424
+      },
+      {
+        "authoredGroundHeight" : 1.0397789926392795,
+        "flowX" : 0.007302969926048213,
+        "flowY" : 0.009644708799643529,
+        "groundHeight" : 1.0397789926392795,
+        "waterDepth" : 0.12522233366014238
+      },
+      {
+        "authoredGroundHeight" : 1.1585110806381778,
+        "flowX" : 0.0006429690123231206,
+        "flowY" : 0.0006440024838160245,
+        "groundHeight" : 1.1585110806381778,
+        "waterDepth" : 0.0011093156385347247
+      },
+      {
+        "authoredGroundHeight" : 1.2874422057380417,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.2874422057380417,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.4020712220087954,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.4020712220087954,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.4904810720855626,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.4904810720855626,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.611156408844315,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.611156408844315,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.723361030766138,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.723361030766138,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.0109999999999997,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.0109999999999997,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.0199999999999996,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.0199999999999996,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.0079999999999996,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.0079999999999996,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.017,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.017,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.005,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.005,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 2.013999999999996,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 2.013999999999996,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.9135022556040657,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.9135022556040657,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7804650906465942,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7804650906465942,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.6586647811541393,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5486647811541394,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.5374325670577296,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5374325670577296,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.4589913436716437,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.4589913436716437,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.3663468454459815,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.3663468454459815,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.2370499967357675,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.2370499967357675,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.0519498998106445,
+        "flowX" : 0.0032479926646474234,
+        "flowY" : 0.012421038640779387,
+        "groundHeight" : 1.0519498998106445,
+        "waterDepth" : 0.06982640716665757
+      },
+      {
+        "authoredGroundHeight" : 1.0230042829870278,
+        "flowX" : 0.0032479926646474234,
+        "flowY" : 0.004540371319623578,
+        "groundHeight" : 1.0230042829870278,
+        "waterDepth" : 0.07967609179026176
+      },
+      {
+        "authoredGroundHeight" : 1.1587406254068862,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.1587406254068862,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.2816897319946576,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.2816897319946576,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.3929749336281085,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.3929749336281085,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.4828673918005124,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.4828673918005124,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.6057501590384886,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.6057501590384886,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.976,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.976,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.9849999999999999,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.9849999999999999,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.994,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.994,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.982,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.982,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.9909999999999999,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.9909999999999999,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.9789999999999994,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.9789999999999994,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.945500105090347,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.945500105090347,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7881395142971341,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7881395142971341,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.6627890806928975,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5527890806928977,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.5511058483722975,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5511058483722975,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.4384934420502078,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.4384934420502078,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.357283588099692,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.357283588099692,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.2324225342451705,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.2324225342451705,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.0877197369220661,
+        "flowX" : 0.0011929135849659256,
+        "flowY" : 0.007984053816553451,
+        "groundHeight" : 1.0877197369220661,
+        "waterDepth" : 0.007911070973300249
+      },
+      {
+        "authoredGroundHeight" : 0.9760000000000002,
+        "flowX" : 0.0013250803489175814,
+        "flowY" : 0.008855782083121098,
+        "groundHeight" : 0.9760000000000002,
+        "waterDepth" : 0.10417524647515464
+      },
+      {
+        "authoredGroundHeight" : 1.0772530702553993,
+        "flowX" : 0.00013216676395165584,
+        "flowY" : 0.00013273837261722608,
+        "groundHeight" : 1.0772530702553993,
+        "waterDepth" : 0.0002282876544675782
+      },
+      {
+        "authoredGroundHeight" : 1.2306225342451707,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.2306225342451707,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.3277502547663589,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.3277502547663589,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.4362934420502076,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.4362934420502076,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.5342391817056307,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5342391817056307,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.9620000000000002,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.9620000000000002,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.9500000000000002,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.9500000000000002,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.959,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.959,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.9680000000000002,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.9680000000000002,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.9560000000000002,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.9560000000000002,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.9649999999999996,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.9649999999999996,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.9105001050903467,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.9105001050903467,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.774139514297134,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.774139514297134,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.6277890806928974,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5177890806928975,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.5142391817056307,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5142391817056307,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.4132934420502077,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.4132934420502077,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.3017502547663589,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.3017502547663589,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.2016225342451705,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.2016225342451705,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.0452530702553993,
+        "flowX" : 0.00023855078780162165,
+        "flowY" : 0.006555538129999477,
+        "groundHeight" : 1.0452530702553993,
+        "waterDepth" : 0.010075662303355885
+      },
+      {
+        "authoredGroundHeight" : 0.9620000000000002,
+        "flowX" : 0.001325094642763583,
+        "flowY" : 0.009072439237408714,
+        "groundHeight" : 0.9620000000000002,
+        "waterDepth" : 0.09007376326984354
+      },
+      {
+        "authoredGroundHeight" : 1.0422530702553994,
+        "flowX" : 0.0010865438549619614,
+        "flowY" : 0.0013528536071932445,
+        "groundHeight" : 1.0422530702553994,
+        "waterDepth" : 0.0021028139491687183
+      },
+      {
+        "authoredGroundHeight" : 1.1956225342451705,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.1956225342451705,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.3137502547663589,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.3137502547663589,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.4012934420502077,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.4012934420502077,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.5202391817056307,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5202391817056307,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.9269999999999998,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.9269999999999998,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.936,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.936,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.924,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.924,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.9329999999999998,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.9329999999999998,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.942,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.942,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.9299999999999995,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.9299999999999995,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.896500105090347,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.896500105090347,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.739139514297134,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.739139514297134,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.6137890806928976,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5037890806928977,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.4792391817056307,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.4792391817056307,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.3782934420502075,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.3782934420502075,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.2877502547663588,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.2877502547663588,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.1666225342451706,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.1666225342451706,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.0312530702553993,
+        "flowX" : 0.0005183362341317542,
+        "flowY" : 0.005801356891818831,
+        "groundHeight" : 1.0312530702553993,
+        "waterDepth" : 0.005447936998149338
+      },
+      {
+        "authoredGroundHeight" : 0.9270000000000002,
+        "flowX" : 0.0005183362341317542,
+        "flowY" : 0.008745468399699672,
+        "groundHeight" : 0.9270000000000002,
+        "waterDepth" : 0.1014267836833808
+      },
+      {
+        "authoredGroundHeight" : 1.0282530702553994,
+        "flowX" : 0,
+        "flowY" : 0.0024410714700557412,
+        "groundHeight" : 1.0282530702553994,
+        "waterDepth" : 0.002104255956819956
+      },
+      {
+        "authoredGroundHeight" : 1.1606225342451706,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.1606225342451706,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.2787502547663587,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.2787502547663587,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.3872934420502077,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.3872934420502077,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.4852391817056307,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.4852391817056307,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.913,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.913,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.901,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.901,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.9100000000000001,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.9100000000000001,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.8980000000000001,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.8980000000000001,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.907,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.907,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.9159999999999997,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.9159999999999997,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.8615001050903468,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.8615001050903468,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7251395142971337,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7251395142971337,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.5787890806928973,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.4137890806928974,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.4652391817056307,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.4652391817056307,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.3432934420502076,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.3432934420502076,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.2527502547663587,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.2527502547663587,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.1526225342451706,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.1526225342451706,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 0.9962530702553993,
+        "flowX" : 0,
+        "flowY" : 0.005285555669996604,
+        "groundHeight" : 0.9962530702553993,
+        "waterDepth" : 0.006471700798413037
+      },
+      {
+        "authoredGroundHeight" : 0.9130000000000001,
+        "flowX" : 0.0006708130119307813,
+        "flowY" : 0.008594435080206613,
+        "groundHeight" : 0.9130000000000001,
+        "waterDepth" : 0.08904622475580619
+      },
+      {
+        "authoredGroundHeight" : 0.9932530702553993,
+        "flowX" : 0.0006708130119307813,
+        "flowY" : 0.0031134515602256182,
+        "groundHeight" : 0.9932530702553993,
+        "waterDepth" : 0.003262196896364429
+      },
+      {
+        "authoredGroundHeight" : 1.1466225342451706,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.1466225342451706,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.2437502547663588,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.2437502547663588,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.3522934420502075,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.3522934420502075,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.4712391817056307,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.4712391817056307,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.878,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.878,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.8869999999999998,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.8869999999999998,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.8749999999999998,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.8749999999999998,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.884,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.884,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.8719999999999999,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.8719999999999999,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.8809999999999993,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.8809999999999993,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.847500105090347,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.847500105090347,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.690139514297134,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.690139514297134,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.5647890806928975,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.3997890806928976,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.4302391817056306,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.4302391817056306,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.3292934420502076,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.3292934420502076,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.2177502547663588,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.2177502547663588,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.1176225342451704,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.1176225342451704,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 0.9822530702553993,
+        "flowX" : 0.0003800410563648953,
+        "flowY" : 0.004908005225653612,
+        "groundHeight" : 0.9822530702553993,
+        "waterDepth" : 0.004558592394799287
+      },
+      {
+        "authoredGroundHeight" : 0.8780000000000001,
+        "flowX" : 0.00029571255295870595,
+        "flowY" : 0.008387666609687702,
+        "groundHeight" : 0.8780000000000001,
+        "waterDepth" : 0.10119468331685333
+      },
+      {
+        "authoredGroundHeight" : 0.9792530702553993,
+        "flowX" : -8.432850340618933e-05,
+        "flowY" : 0.0037013921455251245,
+        "groundHeight" : 0.9792530702553993,
+        "waterDepth" : 0.003263451593983613
+      },
+      {
+        "authoredGroundHeight" : 1.1116225342451704,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.1116225342451704,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.2297502547663588,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.2297502547663588,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.3172934420502076,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.3172934420502076,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.4362391817056306,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.4362391817056306,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.864,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.864,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.852,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.852,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.861,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.861,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.849,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.849,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.858,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.858,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.8459999999999996,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.8459999999999996,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.8125001050903466,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.8125001050903466,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.6761395142971338,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.6761395142971338,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.5297890806928973,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.4747890806928974,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.4162391817056306,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.4162391817056306,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.2942934420502075,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.2942934420502075,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.2037502547663588,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.2037502547663588,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.0826225342451705,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.0826225342451705,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 0.9472530702553993,
+        "flowX" : -0.00010659164476008043,
+        "flowY" : 0.004634628606077753,
+        "groundHeight" : 0.9472530702553993,
+        "waterDepth" : 0.004087316989797013
+      },
+      {
+        "authoredGroundHeight" : 0.8640000000000001,
+        "flowX" : -0.00010659164476008043,
+        "flowY" : 0.00874215381638514,
+        "groundHeight" : 0.8640000000000001,
+        "waterDepth" : 0.08990357671056222
+      },
+      {
+        "authoredGroundHeight" : 0.9442530702553993,
+        "flowX" : 0,
+        "flowY" : 0.003612317343158667,
+        "groundHeight" : 0.9442530702553993,
+        "waterDepth" : 0.007885007815278938
+      },
+      {
+        "authoredGroundHeight" : 1.0976225342451704,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.0976225342451704,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.1947502547663587,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.1947502547663587,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.3032934420502076,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.3032934420502076,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.4012391817056307,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.4012391817056307,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.8289999999999997,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.8289999999999997,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.8379999999999999,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.8379999999999999,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.8259999999999998,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.8259999999999998,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.8349999999999997,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.8349999999999997,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.8229999999999997,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.8229999999999997,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.8319999999999994,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.8319999999999994,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.777500105090347,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.777500105090347,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.641139514297134,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.641139514297134,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.5157890806928975,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.4607890806928976,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.3812391817056306,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.3812391817056306,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.2802934420502075,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.2802934420502075,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.1687502547663586,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.1687502547663586,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.0686225342451705,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.0686225342451705,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 0.9122530702553993,
+        "flowX" : -0.001536288001283024,
+        "flowY" : 0.00626862527732989,
+        "groundHeight" : 0.9122530702553993,
+        "waterDepth" : 0.006852323938412151
+      },
+      {
+        "authoredGroundHeight" : 0.8290000000000001,
+        "flowX" : -0.0033333565771641255,
+        "flowY" : 0.008887392425328846,
+        "groundHeight" : 0.8290000000000001,
+        "waterDepth" : 0.10018900705372276
+      },
+      {
+        "authoredGroundHeight" : 0.9302530702553993,
+        "flowX" : -0.0017970685758811015,
+        "flowY" : 0.001803420522379438,
+        "groundHeight" : 0.9302530702553993,
+        "waterDepth" : 0.010394196503485706
+      },
+      {
+        "authoredGroundHeight" : 1.0626225342451705,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.0626225342451705,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.1807502547663586,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.1807502547663586,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.2682934420502074,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.2682934420502074,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.3872391817056307,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.3872391817056307,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.794,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.794,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.803,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.803,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.812,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.812,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.8,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.8,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.809,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.809,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7969999999999922,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7969999999999922,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7040786998846176,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7040786998846176,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.5510375494619917,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5510375494619917,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.4303032398526216,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.3753032398526217,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.3217236866816686,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.046723686681669,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.2046997288065733,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.1496997288065733,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.1143854959547328,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.0593854959547329,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 0.9791483365347712,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 0.9241483365347711,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 0.8450779841943283,
+        "flowX" : -0.0008636014093106429,
+        "flowY" : 0.008651972759953608,
+        "groundHeight" : 0.7900779841943283,
+        "waterDepth" : 0.10651005047836581
+      },
+      {
+        "authoredGroundHeight" : 0.8130805468372725,
+        "flowX" : -0.0008636014093106429,
+        "flowY" : 0.008271141608603289,
+        "groundHeight" : 0.7580805468372724,
+        "waterDepth" : 0.14505175992741465
+      },
+      {
+        "authoredGroundHeight" : 0.9555586076808958,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 0.9555586076808958,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.0959223954167565,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.0959223954167565,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.184932770587966,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.184932770587966,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.2967387892940876,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.2967387892940876,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.3997857237633358,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.3997857237633358,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.78,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.78,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.768,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.768,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.777,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.777,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.786,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.786,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.774,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.774,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7708345952637234,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7708345952637234,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.611353290098385,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.611353290098385,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.4837428154465162,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.4837428154465162,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.3467618680471567,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.3467618680471567,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.2432665392746893,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.2432665392746893,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.151349216993237,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.151349216993237,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.0351073098109613,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.0351073098109613,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 0.905233294431646,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 0.905233294431646,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 0.7765277539936126,
+        "flowX" : -0.0019171191526333447,
+        "flowY" : 0.011417246660533734,
+        "groundHeight" : 0.7765277539936126,
+        "waterDepth" : 0.09303984619699476
+      },
+      {
+        "authoredGroundHeight" : 0.8440075674721044,
+        "flowX" : -0.0019171191526333447,
+        "flowY" : 0.0054776791959298046,
+        "groundHeight" : 0.8440075674721044,
+        "waterDepth" : 0.03764842719452827
+      },
+      {
+        "authoredGroundHeight" : 0.978287580836603,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 0.978287580836603,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.1028713190812582,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.1028713190812582,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.210789546251902,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.210789546251902,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.3062246222864418,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.3062246222864418,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.4353068336047758,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.4353068336047758,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7449999999999999,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7449999999999999,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.754,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.754,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.742,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.742,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.751,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.751,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7599999999999982,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7599999999999982,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.675579890771657,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.675579890771657,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.5413656751612033,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5413656751612033,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.3973068336047758,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.3973068336047758,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.2862246222864417,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.2862246222864417,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.166789546251902,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.166789546251902,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.0768713190812582,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.0768713190812582,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 0.970287580836603,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 0.970287580836603,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 0.8120075674721043,
+        "flowX" : -0.0026454770797140984,
+        "flowY" : 0.002643669675195606,
+        "groundHeight" : 0.8120075674721043,
+        "waterDepth" : 0.0045598585686488485
+      },
+      {
+        "authoredGroundHeight" : 0.7625277539936126,
+        "flowX" : -0.004421460134715666,
+        "flowY" : 0.012450592082475335,
+        "groundHeight" : 0.7625277539936126,
+        "waterDepth" : 0.06996834182615085
+      },
+      {
+        "authoredGroundHeight" : 0.867233294431646,
+        "flowX" : -0.0017759830550015672,
+        "flowY" : 0.0017774501353558163,
+        "groundHeight" : 0.867233294431646,
+        "waterDepth" : 0.0030635068303569513
+      },
+      {
+        "authoredGroundHeight" : 1.0151073098109613,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.0151073098109613,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.1073492169932369,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.1073492169932369,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.2172665392746893,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.2172665392746893,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.3387618680471567,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.3387618680471567,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.451742815446516,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.451742815446516,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7309999999999999,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7309999999999999,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7189999999999999,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7189999999999999,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.728,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.728,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.716,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.716,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7249999999999681,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7249999999999681,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.6030014599193396,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.6030014599193396,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.452161164564198,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.452161164564198,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.3337857237633357,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.3337857237633357,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.2067387892940875,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.2067387892940875,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.112932770587966,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.112932770587966,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 0.9999223954167564,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 0.9999223954167564,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 0.8775586076808958,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 0.8775586076808958,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 0.7530805468372724,
+        "flowX" : -0.005781523483273939,
+        "flowY" : 0.011065956555167792,
+        "groundHeight" : 0.7530805468372724,
+        "waterDepth" : 0.014524090554311475
+      },
+      {
+        "authoredGroundHeight" : 0.7610779841943283,
+        "flowX" : -0.005781523483273939,
+        "flowY" : 0.0057870922258382905,
+        "groundHeight" : 0.7610779841943283,
+        "waterDepth" : 0.038958386625922395
+      },
+      {
+        "authoredGroundHeight" : 0.9131483365347711,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 0.9131483365347711,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.0243854959547327,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.0243854959547327,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.1326997288065732,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.1326997288065732,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.2257236866816685,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.2257236866816685,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.3523032398526216,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.3523032398526216,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.4910375494619914,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.4910375494619914,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.696,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.696,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7049999999999998,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7049999999999998,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.6929999999999998,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.6929999999999998,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.7019999999999995,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.7019999999999995,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.6475001050903468,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.6475001050903468,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.5111395142971338,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5111395142971338,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.3857890806928974,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.3857890806928974,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.2512391817056305,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.2512391817056305,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.1502934420502073,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.1502934420502073,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.0387502547663587,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.0387502547663587,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 0.9386225342451704,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 0.9386225342451704,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 0.7822530702553994,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 0.7822530702553994,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 0.699,
+        "flowX" : 0,
+        "flowY" : 0.008422286879972186,
+        "groundHeight" : 0.699,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 0.8002530702553994,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 0.8002530702553994,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 0.9326225342451704,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 0.9326225342451704,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.0507502547663587,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.0507502547663587,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.1382934420502073,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.1382934420502073,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.2572391817056305,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.2572391817056305,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.3677890806928974,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.3677890806928974,
+        "waterDepth" : 0
+      },
+      {
+        "authoredGroundHeight" : 1.5111395142971338,
+        "flowX" : 0,
+        "flowY" : 0,
+        "groundHeight" : 1.5111395142971338,
+        "waterDepth" : 0
+      }
+    ],
+    "compatibilityID" : "crick-digging-surface-v1",
+    "height" : 26,
+    "lastEdgeTransfers" : [
+      {
+        "amount" : 0.002148508587843352,
+        "from" : {
+          "column" : 4,
+          "row" : 0
+        },
+        "to" : {
+          "column" : 4,
+          "row" : 1
+        }
+      },
+      {
+        "amount" : 0.00214789067161038,
+        "from" : {
+          "column" : 5,
+          "row" : 0
+        },
+        "to" : {
+          "column" : 4,
+          "row" : 0
+        }
+      },
+      {
+        "amount" : 0.002167911592558536,
+        "from" : {
+          "column" : 5,
+          "row" : 0
+        },
+        "to" : {
+          "column" : 6,
+          "row" : 0
+        }
+      },
+      {
+        "amount" : 0.0038665048519884748,
+        "from" : {
+          "column" : 5,
+          "row" : 0
+        },
+        "to" : {
+          "column" : 5,
+          "row" : 1
+        }
+      },
+      {
+        "amount" : 0.002168549420258164,
+        "from" : {
+          "column" : 6,
+          "row" : 0
+        },
+        "to" : {
+          "column" : 6,
+          "row" : 1
+        }
+      },
+      {
+        "amount" : 0.00257963309974022,
+        "from" : {
+          "column" : 4,
+          "row" : 1
+        },
+        "to" : {
+          "column" : 4,
+          "row" : 2
+        }
+      },
+      {
+        "amount" : 0.00042989440746525696,
+        "from" : {
+          "column" : 5,
+          "row" : 1
+        },
+        "to" : {
+          "column" : 4,
+          "row" : 1
+        }
+      },
+      {
+        "amount" : 0.00046995616082822465,
+        "from" : {
+          "column" : 5,
+          "row" : 1
+        },
+        "to" : {
+          "column" : 6,
+          "row" : 1
+        }
+      },
+      {
+        "amount" : 0.0029677893485587385,
+        "from" : {
+          "column" : 5,
+          "row" : 1
+        },
+        "to" : {
+          "column" : 5,
+          "row" : 2
+        }
+      },
+      {
+        "amount" : 0.002639775102668889,
+        "from" : {
+          "column" : 6,
+          "row" : 1
+        },
+        "to" : {
+          "column" : 6,
+          "row" : 2
+        }
+      },
+      {
+        "amount" : 0.002623296356863969,
+        "from" : {
+          "column" : 4,
+          "row" : 2
+        },
+        "to" : {
+          "column" : 4,
+          "row" : 3
+        }
+      },
+      {
+        "amount" : 4.173815864673835e-05,
+        "from" : {
+          "column" : 5,
+          "row" : 2
+        },
+        "to" : {
+          "column" : 4,
+          "row" : 2
+        }
+      },
+      {
+        "amount" : 0.00014194191493837525,
+        "from" : {
+          "column" : 5,
+          "row" : 2
+        },
+        "to" : {
+          "column" : 6,
+          "row" : 2
+        }
+      },
+      {
+        "amount" : 0.002786138248895405,
+        "from" : {
+          "column" : 5,
+          "row" : 2
+        },
+        "to" : {
+          "column" : 5,
+          "row" : 3
+        }
+      },
+      {
+        "amount" : 0.0027837396516054306,
+        "from" : {
+          "column" : 6,
+          "row" : 2
+        },
+        "to" : {
+          "column" : 6,
+          "row" : 3
+        }
+      },
+      {
+        "amount" : 0.0006274600417439588,
+        "from" : {
+          "column" : 3,
+          "row" : 3
+        },
+        "to" : {
+          "column" : 3,
+          "row" : 4
+        }
+      },
+      {
+        "amount" : 0.0006268425223056332,
+        "from" : {
+          "column" : 4,
+          "row" : 3
+        },
+        "to" : {
+          "column" : 3,
+          "row" : 3
+        }
+      },
+      {
+        "amount" : 0.001998949309554741,
+        "from" : {
+          "column" : 4,
+          "row" : 3
+        },
+        "to" : {
+          "column" : 4,
+          "row" : 4
+        }
+      },
+      {
+        "amount" : 0.000139543317648401,
+        "from" : {
+          "column" : 5,
+          "row" : 3
+        },
+        "to" : {
+          "column" : 6,
+          "row" : 3
+        }
+      },
+      {
+        "amount" : 0.002649605398976074,
+        "from" : {
+          "column" : 5,
+          "row" : 3
+        },
+        "to" : {
+          "column" : 5,
+          "row" : 4
+        }
+      },
+      {
+        "amount" : 0.002926029640150423,
+        "from" : {
+          "column" : 6,
+          "row" : 3
+        },
+        "to" : {
+          "column" : 6,
+          "row" : 4
+        }
+      },
+      {
+        "amount" : 0.0008112091450881457,
+        "from" : {
+          "column" : 3,
+          "row" : 4
+        },
+        "to" : {
+          "column" : 3,
+          "row" : 5
+        }
+      },
+      {
+        "amount" : 0.00017699126331058223,
+        "from" : {
+          "column" : 4,
+          "row" : 4
+        },
+        "to" : {
+          "column" : 3,
+          "row" : 4
+        }
+      },
+      {
+        "amount" : 1.1759822806030382e-05,
+        "from" : {
+          "column" : 4,
+          "row" : 4
+        },
+        "to" : {
+          "column" : 5,
+          "row" : 4
+        }
+      },
+      {
+        "amount" : 0.001815112662779737,
+        "from" : {
+          "column" : 4,
+          "row" : 4
+        },
+        "to" : {
+          "column" : 4,
+          "row" : 5
+        }
+      },
+      {
+        "amount" : 0.00041596755882274995,
+        "from" : {
+          "column" : 5,
+          "row" : 4
+        },
+        "to" : {
+          "column" : 6,
+          "row" : 4
+        }
+      },
+      {
+        "amount" : 0.00224961603337591,
+        "from" : {
+          "column" : 5,
+          "row" : 4
+        },
+        "to" : {
+          "column" : 5,
+          "row" : 5
+        }
+      },
+      {
+        "amount" : 0.0008025510855620003,
+        "from" : {
+          "column" : 6,
+          "row" : 4
+        },
+        "to" : {
+          "column" : 7,
+          "row" : 4
+        }
+      },
+      {
+        "amount" : 0.002542618515603179,
+        "from" : {
+          "column" : 6,
+          "row" : 4
+        },
+        "to" : {
+          "column" : 6,
+          "row" : 5
+        }
+      },
+      {
+        "amount" : 0.0008033366334537935,
+        "from" : {
+          "column" : 7,
+          "row" : 4
+        },
+        "to" : {
+          "column" : 7,
+          "row" : 5
+        }
+      },
+      {
+        "amount" : 6.691225438100889e-05,
+        "from" : {
+          "column" : 3,
+          "row" : 5
+        },
+        "to" : {
+          "column" : 4,
+          "row" : 5
+        }
+      },
+      {
+        "amount" : 0.0007509310439172404,
+        "from" : {
+          "column" : 3,
+          "row" : 5
+        },
+        "to" : {
+          "column" : 3,
+          "row" : 6
+        }
+      },
+      {
+        "amount" : 0.00044626319340220356,
+        "from" : {
+          "column" : 4,
+          "row" : 5
+        },
+        "to" : {
+          "column" : 5,
+          "row" : 5
+        }
+      },
+      {
+        "amount" : 0.001441885294935437,
+        "from" : {
+          "column" : 4,
+          "row" : 5
+        },
+        "to" : {
+          "column" : 4,
+          "row" : 6
+        }
+      },
+      {
+        "amount" : 0.0007089700410500191,
+        "from" : {
+          "column" : 5,
+          "row" : 5
+        },
+        "to" : {
+          "column" : 6,
+          "row" : 5
+        }
+      },
+      {
+        "amount" : 0.0019926279111314176,
+        "from" : {
+          "column" : 5,
+          "row" : 5
+        },
+        "to" : {
+          "column" : 5,
+          "row" : 6
+        }
+      },
+      {
+        "amount" : 0.00040625678428760006,
+        "from" : {
+          "column" : 6,
+          "row" : 5
+        },
+        "to" : {
+          "column" : 7,
+          "row" : 5
+        }
+      },
+      {
+        "amount" : 0.0028502252364109885,
+        "from" : {
+          "column" : 6,
+          "row" : 5
+        },
+        "to" : {
+          "column" : 6,
+          "row" : 6
+        }
+      },
+      {
+        "amount" : 0.0012113995581342003,
+        "from" : {
+          "column" : 7,
+          "row" : 5
+        },
+        "to" : {
+          "column" : 7,
+          "row" : 6
+        }
+      },
+      {
+        "amount" : 0.0007578665053992054,
+        "from" : {
+          "column" : 3,
+          "row" : 6
+        },
+        "to" : {
+          "column" : 4,
+          "row" : 6
+        }
+      },
+      {
+        "amount" : 0.000997005809598184,
+        "from" : {
+          "column" : 4,
+          "row" : 6
+        },
+        "to" : {
+          "column" : 5,
+          "row" : 6
+        }
+      },
+      {
+        "amount" : 0.0012098880516920854,
+        "from" : {
+          "column" : 4,
+          "row" : 6
+        },
+        "to" : {
+          "column" : 4,
+          "row" : 7
+        }
+      },
+      {
+        "amount" : 0.0015665673663295902,
+        "from" : {
+          "column" : 5,
+          "row" : 6
+        },
+        "to" : {
+          "column" : 6,
+          "row" : 6
+        }
+      },
+      {
+        "amount" : 0.0014306188401255419,
+        "from" : {
+          "column" : 5,
+          "row" : 6
+        },
+        "to" : {
+          "column" : 5,
+          "row" : 7
+        }
+      },
+      {
+        "amount" : 0.0019047553036783851,
+        "from" : {
+          "column" : 6,
+          "row" : 6
+        },
+        "to" : {
+          "column" : 7,
+          "row" : 6
+        }
+      },
+      {
+        "amount" : 0.0025208330891989864,
+        "from" : {
+          "column" : 6,
+          "row" : 6
+        },
+        "to" : {
+          "column" : 6,
+          "row" : 7
+        }
+      },
+      {
+        "amount" : 0.003129002387058886,
+        "from" : {
+          "column" : 7,
+          "row" : 6
+        },
+        "to" : {
+          "column" : 7,
+          "row" : 7
+        }
+      },
+      {
+        "amount" : 0.0012177365980316406,
+        "from" : {
+          "column" : 4,
+          "row" : 7
+        },
+        "to" : {
+          "column" : 5,
+          "row" : 7
+        }
+      },
+      {
+        "amount" : 0.002656781615403035,
+        "from" : {
+          "column" : 5,
+          "row" : 7
+        },
+        "to" : {
+          "column" : 6,
+          "row" : 7
+        }
+      },
+      {
+        "amount" : 0.0025129246015382846,
+        "from" : {
+          "column" : 6,
+          "row" : 7
+        },
+        "to" : {
+          "column" : 7,
+          "row" : 7
+        }
+      },
+      {
+        "amount" : 0.002674416278265997,
+        "from" : {
+          "column" : 6,
+          "row" : 7
+        },
+        "to" : {
+          "column" : 6,
+          "row" : 8
+        }
+      },
+      {
+        "amount" : 0.002806811188639722,
+        "from" : {
+          "column" : 7,
+          "row" : 7
+        },
+        "to" : {
+          "column" : 8,
+          "row" : 7
+        }
+      },
+      {
+        "amount" : 0.002846254250196834,
+        "from" : {
+          "column" : 7,
+          "row" : 7
+        },
+        "to" : {
+          "column" : 7,
+          "row" : 8
+        }
+      },
+      {
+        "amount" : 0.0028178129892028328,
+        "from" : {
+          "column" : 8,
+          "row" : 7
+        },
+        "to" : {
+          "column" : 8,
+          "row" : 8
+        }
+      },
+      {
+        "amount" : 0.002684762573469122,
+        "from" : {
+          "column" : 6,
+          "row" : 8
+        },
+        "to" : {
+          "column" : 7,
+          "row" : 8
+        }
+      },
+      {
+        "amount" : 0.0027783699276457212,
+        "from" : {
+          "column" : 7,
+          "row" : 8
+        },
+        "to" : {
+          "column" : 8,
+          "row" : 8
+        }
+      },
+      {
+        "amount" : 0.002763382336006395,
+        "from" : {
+          "column" : 7,
+          "row" : 8
+        },
+        "to" : {
+          "column" : 7,
+          "row" : 9
+        }
+      },
+      {
+        "amount" : 0.0028477940005130933,
+        "from" : {
+          "column" : 8,
+          "row" : 8
+        },
+        "to" : {
+          "column" : 9,
+          "row" : 8
+        }
+      },
+      {
+        "amount" : 0.002758991562154936,
+        "from" : {
+          "column" : 8,
+          "row" : 8
+        },
+        "to" : {
+          "column" : 8,
+          "row" : 9
+        }
+      },
+      {
+        "amount" : 0.002858010469255572,
+        "from" : {
+          "column" : 9,
+          "row" : 8
+        },
+        "to" : {
+          "column" : 9,
+          "row" : 9
+        }
+      },
+      {
+        "amount" : 0.002773979153794262,
+        "from" : {
+          "column" : 7,
+          "row" : 9
+        },
+        "to" : {
+          "column" : 8,
+          "row" : 9
+        }
+      },
+      {
+        "amount" : 0.00294681290761373,
+        "from" : {
+          "column" : 8,
+          "row" : 9
+        },
+        "to" : {
+          "column" : 9,
+          "row" : 9
+        }
+      },
+      {
+        "amount" : 0.0025963417602396757,
+        "from" : {
+          "column" : 8,
+          "row" : 9
+        },
+        "to" : {
+          "column" : 8,
+          "row" : 10
+        }
+      },
+      {
+        "amount" : 0.003558794197113282,
+        "from" : {
+          "column" : 9,
+          "row" : 9
+        },
+        "to" : {
+          "column" : 10,
+          "row" : 9
+        }
+      },
+      {
+        "amount" : 0.0022555785672973986,
+        "from" : {
+          "column" : 9,
+          "row" : 9
+        },
+        "to" : {
+          "column" : 9,
+          "row" : 10
+        }
+      },
+      {
+        "amount" : 0.003567364463977647,
+        "from" : {
+          "column" : 10,
+          "row" : 9
+        },
+        "to" : {
+          "column" : 10,
+          "row" : 10
+        }
+      },
+      {
+        "amount" : 0.0026060497146714527,
+        "from" : {
+          "column" : 8,
+          "row" : 10
+        },
+        "to" : {
+          "column" : 9,
+          "row" : 10
+        }
+      },
+      {
+        "amount" : 0.0048705800937935305,
+        "from" : {
+          "column" : 9,
+          "row" : 10
+        },
+        "to" : {
+          "column" : 10,
+          "row" : 10
+        }
+      },
+      {
+        "amount" : 0.004222638183028593,
+        "from" : {
+          "column" : 10,
+          "row" : 10
+        },
+        "to" : {
+          "column" : 11,
+          "row" : 10
+        }
+      },
+      {
+        "amount" : 0.004222638183028593,
+        "from" : {
+          "column" : 10,
+          "row" : 10
+        },
+        "to" : {
+          "column" : 10,
+          "row" : 11
+        }
+      },
+      {
+        "amount" : 0.004228426393244091,
+        "from" : {
+          "column" : 11,
+          "row" : 10
+        },
+        "to" : {
+          "column" : 11,
+          "row" : 11
+        }
+      },
+      {
+        "amount" : 0.004228426393244091,
+        "from" : {
+          "column" : 10,
+          "row" : 11
+        },
+        "to" : {
+          "column" : 11,
+          "row" : 11
+        }
+      },
+      {
+        "amount" : 0.006573041929886516,
+        "from" : {
+          "column" : 11,
+          "row" : 11
+        },
+        "to" : {
+          "column" : 12,
+          "row" : 11
+        }
+      },
+      {
+        "amount" : 0.001887867637221288,
+        "from" : {
+          "column" : 11,
+          "row" : 11
+        },
+        "to" : {
+          "column" : 11,
+          "row" : 12
+        }
+      },
+      {
+        "amount" : 0.0018108902744032411,
+        "from" : {
+          "column" : 12,
+          "row" : 11
+        },
+        "to" : {
+          "column" : 13,
+          "row" : 11
+        }
+      },
+      {
+        "amount" : 0.004765657756938502,
+        "from" : {
+          "column" : 12,
+          "row" : 11
+        },
+        "to" : {
+          "column" : 12,
+          "row" : 12
+        }
+      },
+      {
+        "amount" : 0.0018117630080891768,
+        "from" : {
+          "column" : 13,
+          "row" : 11
+        },
+        "to" : {
+          "column" : 13,
+          "row" : 12
+        }
+      },
+      {
+        "amount" : 0.001888877026410958,
+        "from" : {
+          "column" : 11,
+          "row" : 12
+        },
+        "to" : {
+          "column" : 12,
+          "row" : 12
+        }
+      },
+      {
+        "amount" : 0.006660000913725093,
+        "from" : {
+          "column" : 12,
+          "row" : 12
+        },
+        "to" : {
+          "column" : 13,
+          "row" : 12
+        }
+      },
+      {
+        "amount" : 0.0006429690123231206,
+        "from" : {
+          "column" : 13,
+          "row" : 12
+        },
+        "to" : {
+          "column" : 14,
+          "row" : 12
+        }
+      },
+      {
+        "amount" : 0.007832945791554352,
+        "from" : {
+          "column" : 13,
+          "row" : 12
+        },
+        "to" : {
+          "column" : 13,
+          "row" : 13
+        }
+      },
+      {
+        "amount" : 0.0006440024838160245,
+        "from" : {
+          "column" : 14,
+          "row" : 12
+        },
+        "to" : {
+          "column" : 14,
+          "row" : 13
+        }
+      },
+      {
+        "amount" : 0.0032479926646474234,
+        "from" : {
+          "column" : 13,
+          "row" : 13
+        },
+        "to" : {
+          "column" : 14,
+          "row" : 13
+        }
+      },
+      {
+        "amount" : 0.004588092849225034,
+        "from" : {
+          "column" : 13,
+          "row" : 13
+        },
+        "to" : {
+          "column" : 13,
+          "row" : 14
+        }
+      },
+      {
+        "amount" : 0.0038963688358075533,
+        "from" : {
+          "column" : 14,
+          "row" : 13
+        },
+        "to" : {
+          "column" : 14,
+          "row" : 14
+        }
+      },
+      {
+        "amount" : 0.0011929135849659256,
+        "from" : {
+          "column" : 13,
+          "row" : 14
+        },
+        "to" : {
+          "column" : 14,
+          "row" : 14
+        }
+      },
+      {
+        "amount" : 0.003395960967328418,
+        "from" : {
+          "column" : 13,
+          "row" : 14
+        },
+        "to" : {
+          "column" : 13,
+          "row" : 15
+        }
+      },
+      {
+        "amount" : 0.00013216676395165584,
+        "from" : {
+          "column" : 14,
+          "row" : 14
+        },
+        "to" : {
+          "column" : 15,
+          "row" : 14
+        }
+      },
+      {
+        "amount" : 0.004959413247313545,
+        "from" : {
+          "column" : 14,
+          "row" : 14
+        },
+        "to" : {
+          "column" : 14,
+          "row" : 15
+        }
+      },
+      {
+        "amount" : 0.00013273837261722608,
+        "from" : {
+          "column" : 15,
+          "row" : 14
+        },
+        "to" : {
+          "column" : 15,
+          "row" : 15
+        }
+      },
+      {
+        "amount" : 0.00023855078780162165,
+        "from" : {
+          "column" : 13,
+          "row" : 15
+        },
+        "to" : {
+          "column" : 14,
+          "row" : 15
+        }
+      },
+      {
+        "amount" : 0.003159577162671059,
+        "from" : {
+          "column" : 13,
+          "row" : 15
+        },
+        "to" : {
+          "column" : 13,
+          "row" : 16
+        }
+      },
+      {
+        "amount" : 0.0010865438549619614,
+        "from" : {
+          "column" : 14,
+          "row" : 15
+        },
+        "to" : {
+          "column" : 15,
+          "row" : 15
+        }
+      },
+      {
+        "amount" : 0.004113025990095169,
+        "from" : {
+          "column" : 14,
+          "row" : 15
+        },
+        "to" : {
+          "column" : 14,
+          "row" : 16
+        }
+      },
+      {
+        "amount" : 0.0012201152345760185,
+        "from" : {
+          "column" : 15,
+          "row" : 15
+        },
+        "to" : {
+          "column" : 15,
+          "row" : 16
+        }
+      },
+      {
+        "amount" : 0.0005183362341317542,
+        "from" : {
+          "column" : 13,
+          "row" : 16
+        },
+        "to" : {
+          "column" : 14,
+          "row" : 16
+        }
+      },
+      {
+        "amount" : 0.0026417797291477725,
+        "from" : {
+          "column" : 13,
+          "row" : 16
+        },
+        "to" : {
+          "column" : 13,
+          "row" : 17
+        }
+      },
+      {
+        "amount" : 0.004632442409604503,
+        "from" : {
+          "column" : 14,
+          "row" : 16
+        },
+        "to" : {
+          "column" : 14,
+          "row" : 17
+        }
+      },
+      {
+        "amount" : 0.001220956235479723,
+        "from" : {
+          "column" : 15,
+          "row" : 16
+        },
+        "to" : {
+          "column" : 15,
+          "row" : 17
+        }
+      },
+      {
+        "amount" : 0.0026437759408488317,
+        "from" : {
+          "column" : 13,
+          "row" : 17
+        },
+        "to" : {
+          "column" : 13,
+          "row" : 18
+        }
+      },
+      {
+        "amount" : 0.0006708130119307813,
+        "from" : {
+          "column" : 14,
+          "row" : 17
+        },
+        "to" : {
+          "column" : 15,
+          "row" : 17
+        }
+      },
+      {
+        "amount" : 0.0039619926706021096,
+        "from" : {
+          "column" : 14,
+          "row" : 17
+        },
+        "to" : {
+          "column" : 14,
+          "row" : 18
+        }
+      },
+      {
+        "amount" : 0.0018924953247458954,
+        "from" : {
+          "column" : 15,
+          "row" : 17
+        },
+        "to" : {
+          "column" : 15,
+          "row" : 18
+        }
+      },
+      {
+        "amount" : 0.0003800410563648953,
+        "from" : {
+          "column" : 13,
+          "row" : 18
+        },
+        "to" : {
+          "column" : 14,
+          "row" : 18
+        }
+      },
+      {
+        "amount" : 0.002264229284804781,
+        "from" : {
+          "column" : 13,
+          "row" : 18
+        },
+        "to" : {
+          "column" : 13,
+          "row" : 19
+        }
+      },
+      {
+        "amount" : 0.004425673939085593,
+        "from" : {
+          "column" : 14,
+          "row" : 18
+        },
+        "to" : {
+          "column" : 14,
+          "row" : 19
+        }
+      },
+      {
+        "amount" : 8.432850340618933e-05,
+        "from" : {
+          "column" : 15,
+          "row" : 18
+        },
+        "to" : {
+          "column" : 14,
+          "row" : 18
+        }
+      },
+      {
+        "amount" : 0.0018088968207792292,
+        "from" : {
+          "column" : 15,
+          "row" : 18
+        },
+        "to" : {
+          "column" : 15,
+          "row" : 19
+        }
+      },
+      {
+        "amount" : 0.0023703993212729722,
+        "from" : {
+          "column" : 13,
+          "row" : 19
+        },
+        "to" : {
+          "column" : 13,
+          "row" : 20
+        }
+      },
+      {
+        "amount" : 0.00010659164476008043,
+        "from" : {
+          "column" : 14,
+          "row" : 19
+        },
+        "to" : {
+          "column" : 13,
+          "row" : 19
+        }
+      },
+      {
+        "amount" : 0.004316479877299548,
+        "from" : {
+          "column" : 14,
+          "row" : 19
+        },
+        "to" : {
+          "column" : 14,
+          "row" : 20
+        }
+      },
+      {
+        "amount" : 0.001803420522379438,
+        "from" : {
+          "column" : 15,
+          "row" : 19
+        },
+        "to" : {
+          "column" : 15,
+          "row" : 20
+        }
+      },
+      {
+        "amount" : 0.0038982259560569176,
+        "from" : {
+          "column" : 13,
+          "row" : 20
+        },
+        "to" : {
+          "column" : 13,
+          "row" : 21
+        }
+      },
+      {
+        "amount" : 0.001536288001283024,
+        "from" : {
+          "column" : 14,
+          "row" : 20
+        },
+        "to" : {
+          "column" : 13,
+          "row" : 20
+        }
+      },
+      {
+        "amount" : 0.004570912548029299,
+        "from" : {
+          "column" : 14,
+          "row" : 20
+        },
+        "to" : {
+          "column" : 14,
+          "row" : 21
+        }
+      },
+      {
+        "amount" : 0.0017970685758811015,
+        "from" : {
+          "column" : 15,
+          "row" : 20
+        },
+        "to" : {
+          "column" : 14,
+          "row" : 20
+        }
+      },
+      {
+        "amount" : 0.00475374680389669,
+        "from" : {
+          "column" : 13,
+          "row" : 21
+        },
+        "to" : {
+          "column" : 13,
+          "row" : 22
+        }
+      },
+      {
+        "amount" : 0.0008636014093106429,
+        "from" : {
+          "column" : 14,
+          "row" : 21
+        },
+        "to" : {
+          "column" : 13,
+          "row" : 21
+        }
+      },
+      {
+        "amount" : 0.0037002290605739887,
+        "from" : {
+          "column" : 14,
+          "row" : 21
+        },
+        "to" : {
+          "column" : 14,
+          "row" : 22
+        }
+      },
+      {
+        "amount" : 0.006663499856637044,
+        "from" : {
+          "column" : 13,
+          "row" : 22
+        },
+        "to" : {
+          "column" : 13,
+          "row" : 23
+        }
+      },
+      {
+        "amount" : 0.0019171191526333447,
+        "from" : {
+          "column" : 14,
+          "row" : 22
+        },
+        "to" : {
+          "column" : 13,
+          "row" : 22
+        }
+      },
+      {
+        "amount" : 0.0017774501353558163,
+        "from" : {
+          "column" : 14,
+          "row" : 22
+        },
+        "to" : {
+          "column" : 14,
+          "row" : 23
+        }
+      },
+      {
+        "amount" : 0.002643669675195606,
+        "from" : {
+          "column" : 12,
+          "row" : 23
+        },
+        "to" : {
+          "column" : 12,
+          "row" : 24
+        }
+      },
+      {
+        "amount" : 0.0026454770797140984,
+        "from" : {
+          "column" : 13,
+          "row" : 23
+        },
+        "to" : {
+          "column" : 12,
+          "row" : 23
+        }
+      },
+      {
+        "amount" : 0.0057870922258382905,
+        "from" : {
+          "column" : 13,
+          "row" : 23
+        },
+        "to" : {
+          "column" : 13,
+          "row" : 24
+        }
+      },
+      {
+        "amount" : 0.0017759830550015672,
+        "from" : {
+          "column" : 14,
+          "row" : 23
+        },
+        "to" : {
+          "column" : 13,
+          "row" : 23
+        }
+      },
+      {
+        "amount" : 0.008422286879972186,
+        "from" : {
+          "column" : 12,
+          "row" : 24
+        },
+        "to" : {
+          "column" : 12,
+          "row" : 25
+        }
+      },
+      {
+        "amount" : 0.005781523483273939,
+        "from" : {
+          "column" : 13,
+          "row" : 24
+        },
+        "to" : {
+          "column" : 12,
+          "row" : 24
+        }
+      }
+    ],
+    "ledger" : {
+      "initialWater" : 6.896679755327288,
+      "waterIn" : 4.48443375785261,
+      "waterOut" : 3.2082990374827793
+    },
+    "outlet" : {
+      "column" : 12,
+      "row" : 25
+    },
+    "schemaVersion" : 1,
+    "source" : {
+      "column" : 5,
+      "row" : 0
+    },
+    "sourceDepthCap" : 0.22,
+    "sourceWaterPerTick" : 0.036,
+    "tick" : 540,
+    "width" : 20
+  }
+}

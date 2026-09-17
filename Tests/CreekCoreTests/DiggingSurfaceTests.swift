@@ -230,6 +230,52 @@ func dryBedSill() throws {
     #expect(sillWorld.lastEdgeTransfers.isEmpty)
 }
 
+@Test("Barrier diagnostic uses destination surface, solver deadband, and visual wet threshold")
+func surfaceBarrierDiagnosticMatchesTransferThreshold() throws {
+    let source = SurfaceCoordinate(column: 1, row: 1)
+    let destination = SurfaceCoordinate(column: 2, row: 1)
+
+    func world(destinationGround: Double, destinationWater: Double) throws -> SurfaceWorld {
+        var cells = Array(repeating: SurfaceCell(groundHeight: 2), count: 12)
+        cells[5] = SurfaceCell(groundHeight: 1, waterDepth: 0.01)
+        cells[6] = SurfaceCell(
+            groundHeight: destinationGround,
+            authoredGroundHeight: destinationGround + 0.1,
+            waterDepth: destinationWater
+        )
+        return try SurfaceWorld(
+            width: 4,
+            height: 3,
+            cells: cells,
+            source: .init(column: 1, row: 0),
+            outlet: .init(column: 1, row: 2),
+            sourceWaterPerTick: 0,
+            sourceDepthCap: 0
+        )
+    }
+
+    // Shallow destination water is visually omitted but contributes to its surface.
+    let blocked = try world(destinationGround: 1.010, destinationWater: 0.003)
+    let barriers = blocked.dryExcavationBarriers()
+    #expect(barriers.count == 1)
+    #expect(barriers.first?.visibleWetSource == source)
+    #expect(barriers.first?.belowVisualWetThresholdDestination == destination)
+    #expect(abs((barriers.first?.rise ?? 0) - 0.003) < 1e-12)
+
+    // A rise inside the same hydraulic tolerance as the solver is not a barrier.
+    let deadband = try world(destinationGround: 1.0119, destinationWater: 0)
+    #expect(deadband.dryExcavationBarriers().isEmpty)
+
+    // A destination below the source surface is transferable, not blocked.
+    var transferable = try world(destinationGround: 1.008, destinationWater: 0)
+    #expect(transferable.dryExcavationBarriers().isEmpty)
+    let advanced = transferable.step()
+    #expect(advanced)
+    #expect(transferable.lastEdgeTransfers.contains {
+        $0.from == source && $0.to == destination && $0.amount > 0
+    })
+}
+
 @Test("Asymmetric long run conserves and fixed-step batching is deterministic")
 func asymmetricConservationAndBatching() throws {
     let width = 7
@@ -323,6 +369,123 @@ func multipleDiggingAlternativesReroute() throws {
     // A similarly deep but disconnected pit does not alter the authoritative gate.
     #expect(zip(pit.flux, noDig.flux).allSatisfy { abs($0 - $1) < 1e-12 })
     print("REROUTE_FLUX baseline12=\(noDig.flux[12]) west12=\(west.flux[12]) baseline15=\(noDig.flux[15]) east15=\(east.flux[15]) pit_delta=\(zip(pit.flux, noDig.flux).map { abs($0 - $1) }.max()!)")
+}
+
+@Test("Captured phone barrier needs a real cut; revised scoop carries water through the same footprint")
+func capturedBarrierRegression() throws {
+    struct Envelope: Decodable { let world: SurfaceWorld }
+    let fixture = try #require(Bundle.module.url(
+        forResource: "barrier-snapshot-tick-540",
+        withExtension: "json",
+        subdirectory: "Fixtures"
+    ))
+    let captured = try JSONDecoder().decode(Envelope.self, from: Data(contentsOf: fixture)).world
+    #expect(captured.tick == 540)
+
+    let footprint = captured.cells.indices.filter {
+        captured.cells[$0].excavationDepth > 0.000_001
+    }.compactMap(captured.coordinate)
+    #expect(footprint.count == 30)
+
+    // Repeated bounded Observe actions confirm the exact captured terrain remains blocked.
+    let untouched = try measuredFootprint(from: captured, footprint: footprint, passes: 0)
+    #expect(untouched.longitudinalTransfer == 0)
+    #expect(untouched.newlyWetFootprint.isEmpty)
+
+    // Reproduce an app session: each stroke gets its automatic 18 ticks, followed by
+    // bounded repeats of the 30-tick Observe action. Measurements use actual transfers.
+    let revised = try measuredFootprint(from: captured, footprint: footprint, passes: 3)
+    #expect(revised.longitudinalTransfer > 0)
+    #expect(!revised.newlyWetFootprint.isEmpty)
+    #expect(revised.earliestLowerEdgeTransferTick != nil)
+    #expect(revised.earliestNewWetTick != nil)
+
+    // Lowering ground is not a predetermined win: a deep, isolated pit stays isolated.
+    let pit = [
+        SurfaceCoordinate(column: 2, row: 15),
+        SurfaceCoordinate(column: 3, row: 15),
+    ]
+    let isolated = try measuredFootprint(from: captured, footprint: pit, passes: 3)
+    #expect(isolated.longitudinalTransfer == 0)
+    #expect(isolated.newlyWetFootprint.isEmpty)
+    #expect(isolated.earliestLowerEdgeTransferTick == nil)
+    #expect(abs(revised.world.waterResidual) < 1e-8)
+    #expect(abs(isolated.world.waterResidual) < 1e-8)
+
+    print("BARRIER_FIX untouched=\(untouched.longitudinalTransfer) revised=\(revised.longitudinalTransfer) newly_wet=\(revised.newlyWetFootprint.count) earliest_lower_edge_tick=\(String(describing: revised.earliestLowerEdgeTransferTick)) earliest_new_wet_tick=\(String(describing: revised.earliestNewWetTick)) isolated=\(isolated.longitudinalTransfer)")
+}
+
+private struct FootprintMeasurement {
+    let world: SurfaceWorld
+    let longitudinalTransfer: Double
+    let newlyWetFootprint: Set<SurfaceCoordinate>
+    let earliestLowerEdgeTransferTick: UInt64?
+    let earliestNewWetTick: UInt64?
+}
+
+private func measuredFootprint(
+    from baseline: SurfaceWorld,
+    footprint: [SurfaceCoordinate],
+    passes: Int
+) throws -> FootprintMeasurement {
+    var world = baseline
+    let indices = Set(footprint.compactMap(world.index))
+    let initialDepths = world.cells.map(\.waterDepth)
+    var longitudinalTransfer = 0.0
+    var earliestLowerEdgeTransferTick: UInt64?
+    var earliestNewWetTick: UInt64?
+
+    func recordLatestTick() {
+        for transfer in world.lastEdgeTransfers {
+            guard let from = world.index(of: transfer.from),
+                  let to = world.index(of: transfer.to),
+                  indices.contains(from), indices.contains(to) else { continue }
+            if transfer.to.row > transfer.from.row {
+                longitudinalTransfer += transfer.amount
+            } else if transfer.to.row < transfer.from.row {
+                longitudinalTransfer -= transfer.amount
+            }
+            if earliestLowerEdgeTransferTick == nil,
+               transfer.from == SurfaceCoordinate(column: 8, row: 20),
+               transfer.to == SurfaceCoordinate(column: 8, row: 21),
+               transfer.amount > 0 {
+                earliestLowerEdgeTransferTick = world.tick
+            }
+        }
+        if earliestNewWetTick == nil, footprint.contains(where: { coordinate in
+            let index = world.index(of: coordinate)!
+            return initialDepths[index] <= 0.001 && world.cells[index].waterDepth > 0.004
+        }) {
+            earliestNewWetTick = world.tick
+        }
+    }
+
+    func advance(_ count: Int) {
+        for _ in 0..<count {
+            let advanced = world.step()
+            #expect(advanced)
+            recordLatestTick()
+        }
+    }
+
+    for _ in 0..<passes {
+        for coordinate in footprint { try world.excavate(coordinate) }
+        advance(18)
+    }
+    // Observe is repeatable in the app; cap this regression at fifteen actions.
+    for _ in 0..<15 { advance(30) }
+
+    let newlyWet = Set(footprint.filter { coordinate in
+        let index = world.index(of: coordinate)!
+        return initialDepths[index] <= 0.001 && world.cells[index].waterDepth > 0.004
+    })
+    return FootprintMeasurement(
+        world: world,
+        longitudinalTransfer: longitudinalTransfer,
+        newlyWetFootprint: newlyWet,
+        earliestLowerEdgeTransferTick: earliestLowerEdgeTransferTick,
+        earliestNewWetTick: earliestNewWetTick
+    )
 }
 
 private struct RouteMeasurement {

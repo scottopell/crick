@@ -17,6 +17,7 @@
 		63E664B5A034030912DF1C22 /* CrickApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 676C3CA2F16064FC6226BEC8 /* CrickApp.swift */; };
 		6964BFC41F05792DBAD3884E /* DiggingSurfaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8896A1E7F8CCA7CD88C4979 /* DiggingSurfaceView.swift */; };
 		7DEBE259360EAF6AD7E01434 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F0CF5B1FDAE153300E65ED37 /* Assets.xcassets */; };
+		82A11D9B0C8C4D45966D8142 /* barrier-snapshot-tick-540.json in Resources */ = {isa = PBXBuildFile; fileRef = 82A11D9A0C8C4D45966D8142 /* barrier-snapshot-tick-540.json */; };
 		959F429A9CBDBC0F54E99D2F /* SimulationSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55D58A8787905E58474E234A /* SimulationSessionTests.swift */; };
 		975488DE591EEA981C76BA64 /* CreekSceneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1927F0343F697B18069277D6 /* CreekSceneView.swift */; };
 		9A4E9DE54458630B51A79AA5 /* CrickiOSUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E52EAD3B93AD77E08925BEB /* CrickiOSUITests.swift */; };
@@ -49,6 +50,7 @@
 		56132AF371609C67B5D3B543 /* CrickiOSUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CrickiOSUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		676C3CA2F16064FC6226BEC8 /* CrickApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrickApp.swift; sourceTree = "<group>"; };
 		73C45D9D17ADE10D452BBEDC /* crick */ = {isa = PBXFileReference; lastKnownFileType = folder; name = crick; path = .; sourceTree = SOURCE_ROOT; };
+		82A11D9A0C8C4D45966D8142 /* barrier-snapshot-tick-540.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "Fixtures/barrier-snapshot-tick-540.json"; sourceTree = "<group>"; };
 		9D402D2EB621E8F7A04CD968 /* CrickiOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = CrickiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A8896A1E7F8CCA7CD88C4979 /* DiggingSurfaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiggingSurfaceView.swift; sourceTree = "<group>"; };
 		AD6166393C91C20381643876 /* DiggingSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiggingSession.swift; sourceTree = "<group>"; };
@@ -140,6 +142,7 @@
 			isa = PBXGroup;
 			children = (
 				55D58A8787905E58474E234A /* SimulationSessionTests.swift */,
+				82A11D9A0C8C4D45966D8142 /* barrier-snapshot-tick-540.json */,
 			);
 			name = CrickiOSTests;
 			path = Apps/CrickiOSTests;
@@ -172,6 +175,7 @@
 			buildPhases = (
 				3F32CC6C2FA7BBF2988E5FB4 /* Sources */,
 				C9D3EDEA8792161702633068 /* Frameworks */,
+				82A11D9C0C8C4D45966D8142 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -251,6 +255,14 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		82A11D9C0C8C4D45966D8142 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				82A11D9B0C8C4D45966D8142 /* barrier-snapshot-tick-540.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		28DBD39FCE7BBC8B7653D365 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -371,7 +383,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = X2ULA6KJUN;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Crick;
@@ -500,7 +512,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_TEAM = X2ULA6KJUN;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Crick;

@@ -31,7 +31,7 @@ xcodebuild -project Crick.xcodeproj -scheme CrickiOS \
 
 - an authored descending bend and raised inside shoulder establish a recognizable creek;
 - all safe interior cells are equally eligible for excavation—there are no solution cells or route flags;
-- every stroke lowers each touched cell once by `0.055`; repeated strokes deepen it, capped at `0.44`;
+- every new stroke lowers each touched cell once by `0.11`; repeated strokes deepen it, capped at an absolute `0.44` (older persisted cuts retain their exact ground heights);
 - each fixed tick derives cardinal edge proposals from one pre-transfer surface;
 - every source cell's aggregate proposal is capped to `58%` of its available water before deltas apply simultaneously;
 - source admission is bounded by a local depth cap;
@@ -47,7 +47,7 @@ Core tests cover coordinate/index round trips, every-cell digging eligibility, a
 
 ## iOS experiment
 
-The app projects actual cell ground height, water depth, and last-tick flux into a coarse-gravel creek. Blue wet cells join into a water body; sparse white arrowheads show true authoritative flux direction, newly exposed lowered ground is dark brown, and the latest stroke outline remains visible through response playback. There is no legacy centerline in this renderer.
+The app projects actual cell ground height, water depth, and last-tick flux into a coarse-gravel creek. Blue wet cells join into a water body; sparse white arrowheads show true authoritative flux direction; exposed-gravel tone and cut edges scale from actual relief; and short orange lips show visibly wet cells blocked by higher excavated neighbors (which may hold shallow water below the visual wet threshold), using the solver's surface comparison and tolerance. The gesture outline exists only while the finger is down. There is no legacy centerline or suggested route in this renderer.
 
 - Tap or drag directly on gravel. A gesture digs each crossed cell once; another gesture digs it again.
 - Completing a stroke synchronously computes 18 fixed ticks and captures every resulting world. The UI only plays those immutable frames; presentation sleeps never advance authority.
@@ -67,7 +67,7 @@ The menu opens the prior SwiftUI/Metal experience as a sheet. Its six-cell one-d
 
 ## Build and release status
 
-The local app version is **0.1.0 (7)**. See [PLAYTEST_READINESS.md](PLAYTEST_READINESS.md) for the current exploratory phone check, exact verification matrix, durable artifact paths, and signing limitations.
+The local app version is **0.1.0 (8)**. See [PLAYTEST_READINESS.md](PLAYTEST_READINESS.md) for the current exploratory phone check, exact verification matrix, durable artifact paths, and signing limitations.
 
 No TestFlight, public upload, credential/profile creation, or physical-device installation is implied. Final artifact signing status and the constrained local archive attempt are recorded in `PLAYTEST_READINESS.md` and the durable artifact manifest.
 

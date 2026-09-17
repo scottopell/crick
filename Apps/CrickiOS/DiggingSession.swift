@@ -80,7 +80,10 @@ final class DiggingSession {
                 pendingDugCoordinates.contains(world.coordinate(for: index)!)
             }
             message = "Water flowed for \(frames.count) fixed ticks"
-            sceneSummary = diggingSummary(newlyWet: (newlyWet.count, alongStroke))
+            sceneSummary = diggingSummary(
+                newlyWet: (newlyWet.count, alongStroke),
+                remainingWaterLips: world.dryExcavationBarriers().count
+            )
             preDigWaterDepths = nil
             pendingDugCoordinates.removeAll(keepingCapacity: true)
         } else {
@@ -109,7 +112,10 @@ final class DiggingSession {
         return world.cells[index].excavationDepth
     }
 
-    private func diggingSummary(newlyWet: (total: Int, alongStroke: Int)?) -> String {
+    private func diggingSummary(
+        newlyWet: (total: Int, alongStroke: Int)?,
+        remainingWaterLips: Int? = nil
+    ) -> String {
         let coordinate = selectedCoordinate
         let patchCount = pendingDugCoordinates.count
         let location = "near column \(coordinate.column + 1), row \(coordinate.row + 1)"
@@ -119,7 +125,10 @@ final class DiggingSession {
         guard let newlyWet else {
             return "\(patchCount) dug \(patchCount == 1 ? "patch" : "patches") \(location), \(depth)."
         }
-        return "\(patchCount) dug \(patchCount == 1 ? "patch" : "patches") \(location), \(depth); water newly wet \(newlyWet.total) \(newlyWet.total == 1 ? "patch" : "patches"), including \(newlyWet.alongStroke) along the stroke."
+        let lipSummary = remainingWaterLips.map {
+            " \($0) local \($0 == 1 ? "lip remains" : "lips remain") where visible water meets higher dug ground (which may contain shallow water below the visual threshold)."
+        } ?? ""
+        return "\(patchCount) dug \(patchCount == 1 ? "patch" : "patches") \(location), \(depth); water newly wet \(newlyWet.total) \(newlyWet.total == 1 ? "patch" : "patches"), including \(newlyWet.alongStroke) along the stroke.\(lipSummary)"
     }
 
     func save() throws {

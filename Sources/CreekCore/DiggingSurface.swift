@@ -65,6 +65,26 @@ public struct SurfaceEdgeTransfer: Codable, Equatable, Sendable {
     }
 }
 
+/// A local, directly observable hydraulic obstruction from a visibly wet source
+/// toward an excavated neighbor below the visual wet-depth threshold. `rise` is
+/// the destination surface minus the source surface, exactly as compared by the
+/// solver. The destination can contain shallow water that the renderer omits.
+public struct SurfaceBarrierEdge: Equatable, Sendable {
+    public let visibleWetSource: SurfaceCoordinate
+    public let belowVisualWetThresholdDestination: SurfaceCoordinate
+    public let rise: Double
+
+    public init(
+        visibleWetSource: SurfaceCoordinate,
+        belowVisualWetThresholdDestination: SurfaceCoordinate,
+        rise: Double
+    ) {
+        self.visibleWetSource = visibleWetSource
+        self.belowVisualWetThresholdDestination = belowVisualWetThresholdDestination
+        self.rise = rise
+    }
+}
+
 public enum SurfaceWorldError: Error, Equatable, Sendable {
     case invalidDimensions
     case invalidCellCount
@@ -78,8 +98,12 @@ public enum SurfaceWorldError: Error, Equatable, Sendable {
 public struct SurfaceWorld: Codable, Equatable, Sendable {
     public static let schemaVersion = 1
     public static let compatibilityID = "crick-digging-surface-v1"
-    public static let excavationIncrement = 0.055
+    /// The default interaction scoop. Persisted v1 worlds store absolute ground
+    /// heights, so increasing this future edit amount does not reinterpret or
+    /// invalidate shallower cuts made by earlier builds.
+    public static let excavationIncrement = 0.11
     public static let maximumExcavationDepth = 0.44
+    public static let hydraulicTolerance = 0.002
 
     public private(set) var schemaVersion: Int
     public private(set) var compatibilityID: String
@@ -167,6 +191,56 @@ public struct SurfaceWorld: Codable, Equatable, Sendable {
     public func isSafeToDig(_ coordinate: SurfaceCoordinate) -> Bool {
         (1..<(width - 1)).contains(coordinate.column)
             && (1..<(height - 1)).contains(coordinate.row)
+    }
+
+    /// Finds immediate blocked transfers from visibly wet cells toward excavated
+    /// neighbors at or below the renderer's wet-depth threshold. Such destinations
+    /// can contain shallow water; this diagnostic intentionally follows visibility,
+    /// while its surface comparison and tolerance exactly match `proposeEdge`.
+    /// Calling this does not mutate or advance the simulation.
+    public func dryExcavationBarriers(
+        visualWetDepth: Double = 0.004,
+        minimumExcavation: Double = 0.000_001
+    ) -> [SurfaceBarrierEdge] {
+        var barriers: [SurfaceBarrierEdge] = []
+        for row in 0..<height {
+            for column in 0..<width {
+                let first = SurfaceCoordinate(column: column, row: row)
+                for second in [
+                    SurfaceCoordinate(column: column + 1, row: row),
+                    SurfaceCoordinate(column: column, row: row + 1),
+                ] {
+                    guard let firstIndex = index(of: first),
+                          let secondIndex = index(of: second) else { continue }
+                    let firstCell = cells[firstIndex]
+                    let secondCell = cells[secondIndex]
+                    let source: (SurfaceCoordinate, SurfaceCell)
+                    let destination: (SurfaceCoordinate, SurfaceCell)
+                    if firstCell.waterDepth > visualWetDepth,
+                       secondCell.waterDepth <= visualWetDepth,
+                       secondCell.excavationDepth > minimumExcavation {
+                        source = (first, firstCell)
+                        destination = (second, secondCell)
+                    } else if secondCell.waterDepth > visualWetDepth,
+                              firstCell.waterDepth <= visualWetDepth,
+                              firstCell.excavationDepth > minimumExcavation {
+                        source = (second, secondCell)
+                        destination = (first, firstCell)
+                    } else {
+                        continue
+                    }
+                    let rise = destination.1.surfaceHeight - source.1.surfaceHeight
+                    if rise > Self.hydraulicTolerance {
+                        barriers.append(SurfaceBarrierEdge(
+                            visibleWetSource: source.0,
+                            belowVisualWetThresholdDestination: destination.0,
+                            rise: rise
+                        ))
+                    }
+                }
+            }
+        }
+        return barriers
     }
 
     /// Lowers any safe interior cell by one equal increment. There are no authored
@@ -351,8 +425,8 @@ public struct SurfaceWorld: Codable, Equatable, Sendable {
         into proposals: inout [[(target: Int, amount: Double, dx: Double, dy: Double)]]
     ) {
         let difference = surfaces[first] - surfaces[second]
-        guard difference.isFinite, abs(difference) > 0.002 else { return }
-        let amount = (abs(difference) - 0.002) * 0.19
+        guard difference.isFinite, abs(difference) > Self.hydraulicTolerance else { return }
+        let amount = (abs(difference) - Self.hydraulicTolerance) * 0.19
         guard amount.isFinite else { return }
         if difference > 0 {
             proposals[first].append((second, amount, dx, dy))

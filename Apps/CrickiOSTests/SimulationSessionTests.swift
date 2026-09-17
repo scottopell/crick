@@ -1,7 +1,10 @@
 import CreekCore
 import CreekRunner
 import Foundation
+import SwiftUI
 import Testing
+import UIKit
+import XCTest
 @testable import CrickiOS
 
 private final class MemorySnapshotStore: SnapshotStoring {
@@ -39,6 +42,105 @@ func diggingSessionPersistence() throws {
     try session.resume()
     #expect(session.world == frames.last)
     #expect(session.world != lowered)
+}
+
+@MainActor
+@Test("Digging session resumes the captured barrier fixture through its native envelope path")
+func diggingSessionCapturedFixtureResume() throws {
+    let fixture = try #require(Bundle(for: MemorySnapshotStore.self).url(
+        forResource: "barrier-snapshot-tick-540",
+        withExtension: "json"
+    ))
+    let data = try Data(contentsOf: fixture)
+    let store = MemorySnapshotStore()
+    store.data = data
+    let expected = try JSONDecoder().decode(DiggingSnapshotEnvelope.self, from: data).world
+    let session = DiggingSession(snapshotStore: store)
+
+    #expect(session.canResume)
+    try session.resume()
+    #expect(session.world == expected)
+    #expect(session.world.tick == 540)
+    #expect(session.sceneSummary == "Resumed at tick 540 with 30 lowered patches.")
+}
+
+    @MainActor
+    final class DiggingFixtureVisualProofTests: XCTestCase {
+    func testExactCapturedBarrierBeforeAndAfterMeasuredLowerRouteFlow() throws {
+    let fixture = try #require(Bundle(for: MemorySnapshotStore.self).url(
+        forResource: "barrier-snapshot-tick-540",
+        withExtension: "json"
+    ))
+    let originalData = try Data(contentsOf: fixture)
+    let store = MemorySnapshotStore()
+    store.data = originalData
+    let session = DiggingSession(snapshotStore: store)
+    try session.resume()
+
+    let footprint = session.world.cells.indices.filter {
+        session.world.cells[$0].excavationDepth > 0.000_001
+    }.compactMap(session.world.coordinate)
+    XCTAssertEqual(footprint.count, 30)
+    XCTAssertFalse(session.world.dryExcavationBarriers().isEmpty)
+    attachRenderedDigging(session: session, named: "Exact tick-540 fixture — visible barriers before")
+
+    let initiallyWet = session.world.cells.map { $0.waterDepth > 0.004 }
+    var measuredLowerRouteFlow = false
+    var newlyWetFootprint = Set<SurfaceCoordinate>()
+
+    func inspect(_ frames: [SurfaceWorld]) {
+        for world in frames {
+            if world.lastEdgeTransfers.contains(where: {
+                $0.from == SurfaceCoordinate(column: 8, row: 20)
+                    && $0.to == SurfaceCoordinate(column: 8, row: 21)
+                    && $0.amount > 0
+            }) {
+                measuredLowerRouteFlow = true
+            }
+            for coordinate in footprint {
+                let index = world.index(of: coordinate)!
+                if !initiallyWet[index], world.cells[index].waterDepth > 0.004 {
+                    newlyWetFootprint.insert(coordinate)
+                }
+            }
+        }
+    }
+
+    for _ in 0..<3 {
+        XCTAssertTrue(session.excavate(footprint))
+        inspect(session.advanceCaptured(count: DiggingSession.automaticTicks))
+    }
+    var observeActions = 0
+    while !measuredLowerRouteFlow && observeActions < 15 {
+        inspect(session.advanceCaptured(count: DiggingSession.observationTicks))
+        observeActions += 1
+    }
+
+    XCTAssertTrue(measuredLowerRouteFlow, "three strokes must create actual flow across the captured lower route")
+    XCTAssertFalse(newlyWetFootprint.isEmpty, "the exact captured footprint must gain visibly wet cells")
+    XCTAssertLessThan(observeActions, 15, "lower-route flow must occur inside the bounded user Observe sequence")
+    XCTAssertGreaterThanOrEqual(session.world.tick, 852)
+    attachRenderedDigging(session: session, named: "Exact fixture — after three strokes and lower-route flow")
+    XCTAssertEqual(try Data(contentsOf: fixture), originalData, "visual proof must not mutate its bundled fixture")
+}
+
+private func attachRenderedDigging(session: DiggingSession, named name: String) {
+    let legacy = try! SimulationSession(snapshotStore: MemorySnapshotStore())
+    let controller = UIHostingController(rootView: DiggingContentView(session: session, legacySession: legacy))
+    let size = CGSize(width: 393, height: 852)
+    controller.view.bounds = CGRect(origin: .zero, size: size)
+    controller.view.backgroundColor = .black
+    controller.view.setNeedsLayout()
+    controller.view.layoutIfNeeded()
+    let renderer = UIGraphicsImageRenderer(size: size)
+    let image = renderer.image { _ in
+        controller.view.drawHierarchy(in: controller.view.bounds, afterScreenUpdates: true)
+    }
+    let attachment = XCTAttachment(image: image)
+    attachment.name = name
+    attachment.lifetime = .keepAlways
+    add(attachment)
+}
 }
 
 @MainActor

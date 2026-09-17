@@ -92,7 +92,9 @@ struct DiggingSurfaceView: View {
             )
             Canvas(opaque: true, colorMode: .linear, rendersAsynchronously: false) { context, _ in
                 drawGround(context: &context, layout: layout)
+                drawCutEdges(context: &context, layout: layout)
                 drawWater(context: &context, layout: layout)
+                drawBarrierEdges(context: &context, layout: layout)
                 drawSelection(context: &context, layout: layout)
                 drawStroke(context: &context, layout: layout)
             }
@@ -104,7 +106,7 @@ struct DiggingSurfaceView: View {
             .accessibilityHint("Drag to excavate. VoiceOver users can move the selected cell with the controls below and choose Dig selected cell.")
             .accessibilityIdentifier("digging-surface")
             .onChange(of: interactionEnabled) { _, enabled in
-                if !enabled { clearGestureState(preserveOutline: true) }
+                if !enabled { clearGestureState(preserveOutline: false) }
             }
             .onDisappear { clearGestureState(preserveOutline: false) }
         }
@@ -118,15 +120,20 @@ struct DiggingSurfaceView: View {
             guard let coordinate = world.coordinate(for: index),
                   let rect = layout.rect(of: coordinate) else { continue }
             let cell = world.cells[index]
-            let normalized = (cell.authoredGroundHeight - minimum) / max(0.001, maximum - minimum)
+            let normalized = (cell.groundHeight - minimum) / max(0.001, maximum - minimum)
             let dug = min(1, cell.excavationDepth / SurfaceWorld.maximumExcavationDepth)
-            let base = Color(
-                red: 0.28 + normalized * 0.20,
-                green: 0.245 + normalized * 0.17,
-                blue: 0.16 + normalized * 0.10
+            let baseRed = 0.28 + normalized * 0.20
+            let baseGreen = 0.245 + normalized * 0.17
+            let baseBlue = 0.16 + normalized * 0.10
+            // A first scoop is a subtle exposed-gravel shift, not the old nearly
+            // opaque dark trench. Color and relief now increase continuously with
+            // the authoritative absolute cut depth.
+            let exposure = dug == 0 ? 0 : 0.10 + 0.62 * dug
+            let color = Color(
+                red: baseRed * (1 - exposure) + 0.27 * exposure,
+                green: baseGreen * (1 - exposure) + 0.145 * exposure,
+                blue: baseBlue * (1 - exposure) + 0.075 * exposure
             )
-            let exposed = Color(red: 0.29, green: 0.17, blue: 0.095)
-            let color = dug > 0 ? exposed.opacity(0.72 + 0.28 * dug) : base
             context.fill(Path(rect.insetBy(dx: 0.08, dy: 0.08)), with: .color(color))
 
             // Stable gravel flecks retain a creek-bed reading without procedural randomness.
@@ -138,6 +145,44 @@ struct DiggingSurfaceView: View {
                     height: max(1, rect.height * 0.16)
                 )
                 context.fill(Path(ellipseIn: pebble), with: .color(.white.opacity(0.10)))
+            }
+        }
+    }
+
+    /// Draws only measured height discontinuities around excavated ground. The
+    /// high side catches light and the low side gets a short shadow, so shallow
+    /// and deep cuts remain distinguishable without inventing a route.
+    private func drawCutEdges(context: inout GraphicsContext, layout: SurfaceMapLayout) {
+        for row in 0..<world.height {
+            for column in 0..<world.width {
+                let first = SurfaceCoordinate(column: column, row: row)
+                guard let firstIndex = world.index(of: first) else { continue }
+                for (second, vertical) in [
+                    (SurfaceCoordinate(column: column + 1, row: row), true),
+                    (SurfaceCoordinate(column: column, row: row + 1), false),
+                ] {
+                    guard let secondIndex = world.index(of: second),
+                          world.cells[firstIndex].excavationDepth > 0.000_001
+                            || world.cells[secondIndex].excavationDepth > 0.000_001,
+                          let firstRect = layout.rect(of: first) else { continue }
+                    let difference = world.cells[firstIndex].groundHeight
+                        - world.cells[secondIndex].groundHeight
+                    guard abs(difference) > 0.018 else { continue }
+                    var edge = Path()
+                    if vertical {
+                        edge.move(to: CGPoint(x: firstRect.maxX, y: firstRect.minY + 0.7))
+                        edge.addLine(to: CGPoint(x: firstRect.maxX, y: firstRect.maxY - 0.7))
+                    } else {
+                        edge.move(to: CGPoint(x: firstRect.minX + 0.7, y: firstRect.maxY))
+                        edge.addLine(to: CGPoint(x: firstRect.maxX - 0.7, y: firstRect.maxY))
+                    }
+                    let strength = min(0.82, 0.20 + abs(difference) / 0.44 * 0.62)
+                    context.stroke(
+                        edge,
+                        with: .color(difference > 0 ? .white.opacity(strength * 0.45) : .black.opacity(strength)),
+                        style: StrokeStyle(lineWidth: 0.7 + min(1.5, abs(difference) * 4.5))
+                    )
+                }
             }
         }
     }
@@ -198,6 +243,29 @@ struct DiggingSurfaceView: View {
         }
     }
 
+    /// Marks the short, local lip where visibly wet water meets a higher excavated
+    /// neighbor. That neighbor may hold water below the renderer's wet threshold.
+    private func drawBarrierEdges(context: inout GraphicsContext, layout: SurfaceMapLayout) {
+        for barrier in world.dryExcavationBarriers() {
+            guard let wet = layout.center(of: barrier.visibleWetSource),
+                  let destination = layout.center(of: barrier.belowVisualWetThresholdDestination) else { continue }
+            let midpoint = CGPoint(x: (wet.x + destination.x) / 2, y: (wet.y + destination.y) / 2)
+            let dx = destination.x - wet.x
+            let dy = destination.y - wet.y
+            let length = min(layout.cellSize.width, layout.cellSize.height) * 0.30
+            let magnitude = max(0.001, hypot(dx, dy))
+            let perpendicular = CGPoint(x: -dy / magnitude, y: dx / magnitude)
+            var lip = Path()
+            lip.move(to: CGPoint(x: midpoint.x - perpendicular.x * length, y: midpoint.y - perpendicular.y * length))
+            lip.addLine(to: CGPoint(x: midpoint.x + perpendicular.x * length, y: midpoint.y + perpendicular.y * length))
+            context.stroke(
+                lip,
+                with: .color(.orange.opacity(0.52 + min(0.28, barrier.rise))),
+                style: StrokeStyle(lineWidth: 1.35, lineCap: .round)
+            )
+        }
+    }
+
     private func drawStroke(context: inout GraphicsContext, layout: SurfaceMapLayout) {
         guard visibleStroke.count > 1 else { return }
         var outline = Path()
@@ -249,7 +317,7 @@ struct DiggingSurfaceView: View {
             }
             .onEnded { _ in
                 let changed = interactionEnabled && !brush.touched.isEmpty
-                clearGestureState(preserveOutline: true)
+                clearGestureState(preserveOutline: false)
                 if changed { onGestureEnded() }
             }
     }

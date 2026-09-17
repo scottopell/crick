@@ -18,7 +18,8 @@ let package = Package(
         ),
         .testTarget(
             name: "CreekCoreTests",
-            dependencies: ["CreekCore", "CreekRunner"]
+            dependencies: ["CreekCore", "CreekRunner"],
+            resources: [.copy("Fixtures")]
         ),
     ],
     swiftLanguageModes: [.v6]

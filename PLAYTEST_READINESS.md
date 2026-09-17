@@ -1,10 +1,22 @@
+## Delivery contract: main → Xcode Cloud → TestFlight
+
+The user confirms that the existing Apple-hosted Xcode Cloud workflow publishes pushes to `main` to TestFlight. Use this established path; do not replace it with GitHub distribution infrastructure. GitHub Actions validates source/builds only and is not TestFlight evidence.
+
+A delivery is complete when the corresponding Xcode Cloud source/build has uploaded, finished Apple processing, and is available to the intended existing TestFlight testers. A git push alone does not prove these downstream stages. Cloud configuration is hosted by Apple; absence of repository configuration or GitHub checks does not mean the workflow is absent. Preserve Cloud-managed unique build numbering; local development build 7 is not evidence of TestFlight build number 7.
+
+The development-signed 0.1.0 (7) artifact from source `687ca314355a0369f1ab4fab8148e50e118654c2` was reinstalled on the paired Scott iPhone on 2026-09-17 at the user's request, without uninstalling or clearing app data. Device inventory confirms build 7. This is temporary access, not fulfillment of TestFlight delivery; phone launch and acceptance are not claimed.
+
+The delivery-documentation commit carrying this section is an intentional new push to the existing Cloud trigger, with no product/source changes. The prior product commit was already on remote main; a no-op push would not retrigger it. Apple run/processing/tester availability remains unverified from this agent's unauthenticated portal session.
+
+---
+
 # Digging experiment exploratory readiness — 0.1.0 (7)
 
 Updated 2026-09-16. This document replaces the stale build-1 distribution checklist; historical text remains in git.
 
 ## What is ready
 
-The app launches into **Dig the Bend**, an unscored 20 × 26 surface-water experiment. The old **Shape the Bend** experience remains available from the Creek menu. Build 7 is intended for one-person exploratory evaluation, not cohort acceptance and not TestFlight distribution.
+The app launches into **Dig the Bend**, an unscored 20 × 26 surface-water experiment. The old **Shape the Bend** experience remains available from the Creek menu. The experiment is intended for personal exploratory evaluation, not cohort acceptance. Its normal delivery channel is the existing main-to-TestFlight workflow described above; the local development-signed build is only a temporary alternative.
 
 Automated readiness requires all of the following from final current code:
 

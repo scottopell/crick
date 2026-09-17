@@ -1,3 +1,5 @@
+> **Beta delivery:** pushes to `main` use the existing Apple-hosted **Xcode Cloud → TestFlight** workflow (user-confirmed). GitHub Actions and local signed installs are not substitutes for a processed TestFlight build available to the existing testers. Do not create a replacement pipeline or infer Cloud is missing from absent GitHub checks. See [delivery contract and current evidence](PLAYTEST_READINESS.md). Local development build numbers must not be confused with Cloud/TestFlight build numbers.
+
 # Crick
 
 Crick is an experimental, human-scale creek-tending game. Read [VISION.md](VISION.md) for the long-term direction and [DIGGING_EXPERIMENT.md](DIGGING_EXPERIMENT.md) for the commissioned experiment's brief, limits, and work log.

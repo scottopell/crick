@@ -9,10 +9,13 @@
 /* Begin PBXBuildFile section */
 		020D538F25309939D500C323 /* CreekRunner in Frameworks */ = {isa = PBXBuildFile; productRef = 6672AF508AB47FDC77A33648 /* CreekRunner */; };
 		14F690747072E032AC4088E7 /* CreekShaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = D9AE6F55E4003F46952DE0AE /* CreekShaders.metal */; };
+		1E441DD833D10DCDF8ABB27A /* DiggingContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5EADF0A93C604982D9050D8 /* DiggingContentView.swift */; };
 		23999D6612D0235267855AF2 /* CreekCore in Frameworks */ = {isa = PBXBuildFile; productRef = 0734959D15DEDD008A3DCC2C /* CreekCore */; };
 		2A25600B4B53BEACD5D8296C /* CreekCore in Frameworks */ = {isa = PBXBuildFile; productRef = FF8A8CFCB35651AA6D4DC941 /* CreekCore */; };
+		42C30185C4D62D168F119353 /* DiggingSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD6166393C91C20381643876 /* DiggingSession.swift */; };
 		4EAB5DFE028965D9EE37E2D6 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F05FD3F7B45ACFDDE2B1D44D /* ContentView.swift */; };
 		63E664B5A034030912DF1C22 /* CrickApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 676C3CA2F16064FC6226BEC8 /* CrickApp.swift */; };
+		6964BFC41F05792DBAD3884E /* DiggingSurfaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8896A1E7F8CCA7CD88C4979 /* DiggingSurfaceView.swift */; };
 		7DEBE259360EAF6AD7E01434 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F0CF5B1FDAE153300E65ED37 /* Assets.xcassets */; };
 		959F429A9CBDBC0F54E99D2F /* SimulationSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55D58A8787905E58474E234A /* SimulationSessionTests.swift */; };
 		975488DE591EEA981C76BA64 /* CreekSceneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1927F0343F697B18069277D6 /* CreekSceneView.swift */; };
@@ -47,8 +50,11 @@
 		676C3CA2F16064FC6226BEC8 /* CrickApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrickApp.swift; sourceTree = "<group>"; };
 		73C45D9D17ADE10D452BBEDC /* crick */ = {isa = PBXFileReference; lastKnownFileType = folder; name = crick; path = .; sourceTree = SOURCE_ROOT; };
 		9D402D2EB621E8F7A04CD968 /* CrickiOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = CrickiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A8896A1E7F8CCA7CD88C4979 /* DiggingSurfaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiggingSurfaceView.swift; sourceTree = "<group>"; };
+		AD6166393C91C20381643876 /* DiggingSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiggingSession.swift; sourceTree = "<group>"; };
 		CCC870FA0FD1FE994C1FE7D1 /* SimulationSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulationSession.swift; sourceTree = "<group>"; };
 		D9AE6F55E4003F46952DE0AE /* CreekShaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = CreekShaders.metal; sourceTree = "<group>"; };
+		E5EADF0A93C604982D9050D8 /* DiggingContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiggingContentView.swift; sourceTree = "<group>"; };
 		F05FD3F7B45ACFDDE2B1D44D /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		F0CF5B1FDAE153300E65ED37 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -112,6 +118,9 @@
 				1927F0343F697B18069277D6 /* CreekSceneView.swift */,
 				D9AE6F55E4003F46952DE0AE /* CreekShaders.metal */,
 				676C3CA2F16064FC6226BEC8 /* CrickApp.swift */,
+				E5EADF0A93C604982D9050D8 /* DiggingContentView.swift */,
+				AD6166393C91C20381643876 /* DiggingSession.swift */,
+				A8896A1E7F8CCA7CD88C4979 /* DiggingSurfaceView.swift */,
 				CCC870FA0FD1FE994C1FE7D1 /* SimulationSession.swift */,
 			);
 			name = CrickiOS;
@@ -277,6 +286,9 @@
 				975488DE591EEA981C76BA64 /* CreekSceneView.swift in Sources */,
 				14F690747072E032AC4088E7 /* CreekShaders.metal in Sources */,
 				63E664B5A034030912DF1C22 /* CrickApp.swift in Sources */,
+				1E441DD833D10DCDF8ABB27A /* DiggingContentView.swift in Sources */,
+				42C30185C4D62D168F119353 /* DiggingSession.swift in Sources */,
+				6964BFC41F05792DBAD3884E /* DiggingSurfaceView.swift in Sources */,
 				C752A23FCDF9AB674418905F /* SimulationSession.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -359,7 +371,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = X2ULA6KJUN;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Crick;
@@ -488,7 +500,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 7;
 				DEVELOPMENT_TEAM = X2ULA6KJUN;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Crick;

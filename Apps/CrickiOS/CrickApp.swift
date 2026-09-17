@@ -11,12 +11,18 @@ struct CrickApp: App {
     @MainActor
     private var rootView: some View {
         do {
-            let store = try FileSnapshotStore.applicationSupport()
+            let legacyStore = try FileSnapshotStore.applicationSupport()
+            let diggingStore = try FileSnapshotStore.diggingApplicationSupport()
             if ProcessInfo.processInfo.environment["CRICK_UI_TEST_RESET"] == "1" {
-                try store.removeIfPresent()
+                try legacyStore.removeIfPresent()
+                try diggingStore.removeIfPresent()
             }
-            let session = try SimulationSession(snapshotStore: store)
-            return AnyView(ContentView(session: session))
+            let legacySession = try SimulationSession(snapshotStore: legacyStore)
+            let diggingSession = DiggingSession(snapshotStore: diggingStore)
+            return AnyView(DiggingContentView(
+                session: diggingSession,
+                legacySession: legacySession
+            ))
         } catch {
             return AnyView(ContentUnavailableView(
                 "Crick could not start",

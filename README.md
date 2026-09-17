@@ -1,147 +1,80 @@
 # Crick
 
-Crick is an experimental, human-scale creek-tending game. Read [VISION.md](VISION.md) for the product direction.
+Crick is an experimental, human-scale creek-tending game. Read [VISION.md](VISION.md) for the long-term direction and [DIGGING_EXPERIMENT.md](DIGGING_EXPERIMENT.md) for the commissioned experiment's brief, limits, and work log.
 
-The repository contains a first Scope 1 headless creek laboratory: a platform-independent deterministic Swift core, reproducible scenarios, a command-line runner, versioned snapshots, structured diagnostics, and tests. It also includes a native SwiftUI iOS laboratory for interactive playtesting. See [first playtest readiness](PLAYTEST_READINESS.md) for release preparation and Xcode Cloud steps.
+The default iOS scene is now a small **Dig the Bend** exploration: lower visible gravel and watch deterministic two-dimensional surface water find a changed path. It has no objective, score, prescribed route, or result screen. The earlier one-dimensional **Shape the Bend** experience is preserved intact under **Creek menu → Open legacy Shape the Bend**.
 
-## Requirements
+## Requirements and commands
 
 - Swift 6.3 or later
-- macOS or Linux
-
-The initial environment was validated with:
-
-- macOS 26.5.2 (arm64)
-- Xcode 26.6 (build 17F113)
-- Apple Swift 6.3.3
-- Swift Package Manager 6.3.3
-
-The package uses Swift tools version 6.3 and Swift 6 language mode. The core intentionally has no Apple-framework, wall-clock, file-I/O, or global-random-state dependency.
-
-## Build and test
+- XcodeGen and Xcode 26.x for the iOS app
+- iOS 17 or later
 
 ```sh
 swift build
+swift test
 swift run crick list
 swift run crick run baseline
-swift run crick run rock --json /tmp/rock.json --csv /tmp/rock.csv \
-  --snapshot /tmp/rock.snapshot.json
-swift run crick resume /tmp/rock.snapshot.json --ticks 20
-swift test
-```
 
-Each scenario prints its ending tick, water and sediment inventories, conservation residuals, and invariant-violation count. JSON evidence contains the complete scenario definition, initial state, tick-indexed commands, final state, and diagnostics. CSV exports final per-cell values.
-
-The CLI reports and rejects unknown commands/options, extra positional arguments, duplicate options, missing option values, unknown scenarios, invalid tick counts, and normalized artifact-path collisions with usage on stderr and exit status 2. Artifact writes atomically replace individual destination files; a command requesting several artifacts is not a multi-file transaction.
-
-GitHub Actions independently runs the build, executable, and tests with Swift 6.3.3 on Linux. Local commands are the development feedback loop; CI is a verification gate.
-
-## Simulation contract
-
-`CreekCore` owns a one-dimensional reach of cells with bed elevation, water depth, suspended sediment, and rock resistance. The caller advances integer ticks; one authoritative tick represents one second. Accelerated execution runs more fixed ticks rather than changing the timestep.
-
-At the start of each tick, boundary water and sediment enter the upstream cell. Transfers are calculated in stable cell order from the pre-tick state, then sediment erodes or deposits according to local transport capacity, and water and suspended sediment may leave through the downstream boundary. Every external transfer is accumulated in a material ledger.
-
-Commands carry an explicit tick. Commands sharing a tick execute in caller order before that tick advances. Invalid cells, quantities, past targets, past/future direct application, and schedules extending beyond their target are rejected. A scheduled run is transactional: if any command fails, no ticks or earlier commands from that run are committed.
-
-### Determinism guarantee
-
-The same determinism compatibility ID and platform, initial state or snapshot, and ordered command sequence produce exactly equal authoritative states. The current compatibility ID is `crick-sim-v5`. It must change when authoritative stepping semantics change incompatibly. The core uses fixed ticks, stable array traversal, and no wall clock, file I/O, global random state, or unordered collection traversal.
-
-Cross-compatibility-ID and cross-architecture bit-identical floating-point replay is **not** guaranteed. Snapshots therefore contain schema, simulation, and determinism compatibility versions and reject unsupported values or invalid authoritative state.
-
-## Current evidence
-
-Built-in fixtures provide:
-
-- `baseline`: ordinary flow through an unobstructed reach
-- `rock`: a tick-indexed obstruction that creates measurable upstream backwater
-- `flood`: a bounded high-flow pulse that causes persistent, conserved bed change
-
-Tests cover exact replay, fixed-step partitioning, atomic command scheduling and rejection, water and sediment budgets, dry and extreme-flow states, non-negative finite state, snapshot round-trip/version/compatibility rejection, repeated save/resume equivalence, scenario behavior, strict CLI parsing, and JSON/CSV diagnostics. Conservation uses a relative tolerance of `1e-9 × max(1, expected inventory)` so diagnostics remain meaningful across scenario scales.
-
-## Shape the Bend gameplay contract
-
-`shape-the-bend` is the first narrow game scenario. Its authoritative objective asks the player to create a deep, calm pool at bend cell 2 and hold both conditions for five consecutive fixed ticks. Objective definition, progress, last authoritative transfers, and result are owned by `CreekCore` and persist in snapshots.
-
-The scenario starts from a deterministic flowing fixture rebased from 40 ordinary authoritative ticks. Calmness is the local speed proxy `transfer leaving target / target water depth`, not total discharge. Current provisional thresholds are `0.50` minimum depth and `0.060` maximum calmness. Five effective stone seats are offered; the outlet is excluded because its resistance cannot affect this solver. At the first 20-tick horizon cells 2 and 3 hold, cell 4 is deep but still quick, and cells 0 and 1 do not form the pool. Tests lock actual depth, calmness, and outcomes at 20, 40, and 80 ticks. The player journey uses cell 0 as the clearly failed representative rather than presenting borderline cell 4 as the instructional miss. Moving the stone clears stale objective evidence before the next tick; changing these semantics requires a new determinism compatibility ID.
-
-Measured `(depth, calmness)` by seat at 20 / 40 / 80 ticks:
-
-| Seat | 20 | 40 | 80 |
-| --- | --- | --- | --- |
-| 0 upstream | `(0.3309, 0.0910)` | `(0.3783, 0.0926)` | `(0.4895, 0.0845)` |
-| 1 above bend | `(0.2656, 0.0965)` | `(0.3094, 0.0993)` | `(0.4277, 0.0878)` |
-| 2 inside bend | `(0.6224, 0.0368)` | `(0.7723, 0.0368)` | `(1.0051, 0.0348)` |
-| 3 below bend | `(0.5475, 0.0494)` | `(0.6855, 0.0443)` | `(0.9091, 0.0389)` |
-| 4 lower run | `(0.5029, 0.0606)` | `(0.6307, 0.0508)` | `(0.8418, 0.0430)` |
-
-A single authoritative `moveRock` command atomically removes the stone from its prior cell and places it in its destination at the command tick. Rendering, drag previews, and settle animation remain projections and cannot relocate the stone.
-
-## Native iOS laboratory
-
-The first native client is generated with [XcodeGen](https://github.com/yonaskolb/XcodeGen) and targets iOS 17 or later:
-
-```sh
 xcodegen generate
 xcodebuild -project Crick.xcodeproj -scheme CrickiOS \
   -destination 'platform=iOS Simulator,name=iPhone 15 Pro' test
 ```
 
-The app is a projection and intent adapter, not a second simulation:
+`CrickCLI` and the original scenarios remain available. Their JSON/CSV diagnostics, versioned snapshots, command scheduling, conservation tests, and `crick-sim-v5` behavior are unchanged by the digging experiment.
 
-- A `@MainActor` `SimulationSession` privately owns the only `Simulator`.
-- SwiftUI receives immutable cell and diagnostic projections; no mutable `WorldState` is exposed.
-- State changes only through explicit load, fixed-tick experiments, and rock-command intents. Presentation time selects among already-computed immutable projections and never enters authoritative simulation.
-- `CreekCore` remains platform-neutral and performs no persistence I/O.
-- The app-layer store writes a client envelope containing scenario presentation metadata and the versioned authoritative `SimulationSnapshot`.
-- Resume replaces the private simulator only after shared snapshot decoding and invariant validation succeeds.
+## Digging surface contract
 
-App-layer unit tests prove exact per-tick experiment projections, effective-seat routing, evolved-reach retry, Keep closure, immutable projection updates, and snapshot recovery. An XCUITest drives a deep-but-quick near miss, moves the same stone on the evolved reach, reaches success, handles background presentation settlement, keeps the pool, and verifies the authoritative tick. GitHub's macOS job regenerates the project and builds the app for a generic simulator; simulator tests run locally because hosted simulator availability varies.
+`CreekCore/DiggingSurface.swift` is an isolated `20 × 26` cellular authority with compatibility ID `crick-digging-surface-v1`:
 
-### Metal creek viewport
+- an authored descending bend and raised inside shoulder establish a recognizable creek;
+- all safe interior cells are equally eligible for excavation—there are no solution cells or route flags;
+- every stroke lowers each touched cell once by `0.055`; repeated strokes deepen it, capped at `0.44`;
+- each fixed tick derives cardinal edge proposals from one pre-transfer surface;
+- every source cell's aggregate proposal is capped to `58%` of its available water before deltas apply simultaneously;
+- source admission is bounded by a local depth cap;
+- the outlet is a normal transfer participant, then drains a bounded amount;
+- a ledger accounts for initial water, source inflow, and outlet outflow;
+- one complete invariant gate validates construction and decoded snapshots (overflow-safe dimensions, boundaries, finite surface/cells/rates/ledger, excavation bounds, conservation, and measured edge transfers);
+- the last fixed tick exposes completed signed cardinal edge transfers for projection/measurement only; it does not expose or influence routing;
+- at `UInt64.max`, a fixed step is a no-op and returns `false` rather than wrapping or partially mutating authority.
 
-The player surface is a custom MetalKit viewport under a fixed authored camera. Six authoritative cells are hidden sample stations along one curved creek centerline; five effective stone seats are available without exposing a grid. Smooth bank, gravel, and water ribbons project state, water width derives monotonically from authoritative depth, and animated current cues derive from transfer/depth. Screen-space picking considers only effective unoccupied seats before sending a tick-indexed intent.
+The model intentionally excludes momentum, rain, erosion, sediment, spoil, materials, scoring, objectives, and wall-clock advancement. It is a deterministic surface-flow toy, not CFD or an engineering prediction.
 
-A cosmetic shader clock animates only water glints. It is not an input to `SimulationSession`, objective evaluation, persistence, or replay. Xcode 26 requires its matching optional Metal toolchain (`xcodebuild -downloadComponent MetalToolchain`); iOS CI installs it before building.
+Core tests cover coordinate/index round trips, every-cell digging eligibility, aggregate caps, dry-bed/sill behavior, long asymmetric conservation, batching determinism, tick overflow, corrupt JSON invariants, exact replay, and source-to-outlet flow. The reroute test accumulates real signed downstream edge flux from one identical baseline: two connected alternative strokes increase different gate columns and newly wet stroke/downstream patches, while an equally excavated disconnected pit leaves the gate unchanged.
 
-The playable interaction begins with one stone on the near bank. A pan gesture visually lifts and moves that renderer-owned preview; releasing over the creek resolves the nearest authored station and submits one authoritative `moveRock` command. Invalid releases snap back to the last authoritative location. A named “Choose a spot” menu provides the same intents without spatial dragging.
+## iOS experiment
 
-“Test this spot · 20 creek seconds” synchronously commits exactly 20 fixed ticks and captures one immutable projection after every real tick. The UI presents those projections over about three seconds; cancellation or backgrounding settles to the already-committed final projection, and Reduce Motion presents it immediately. Natural foam packets travel along the authored centerline at a continuous projection speed sourced only from immutable authoritative transfer/depth (the exact objective calmness at its segment). Reduce Motion replaces travel with paired static distance marks.
+The app projects actual cell ground height, water depth, and last-tick flux into a coarse-gravel creek. Blue wet cells join into a water body; sparse white arrowheads show true authoritative flux direction, newly exposed lowered ground is dark brown, and the latest stroke outline remains visible through response playback. There is no legacy centerline in this renderer.
 
-Before the first intervention, the app captures the actual flowing projection; each evolved retry captures its own pre-move seam. After the bounded presentation, a dedicated read-creek phase offers a toggle between that before projection and the final after projection when comparison data is available. It hides header, bottom-control, accessibility, and success-haptic classifications until “Reveal what happened” is pressed. A miss permits moving the same stone on the evolved reach before another bounded experiment. Only revealed authoritative success offers “Keep this pool.” Detailed conservation data and save/resume remain in Field Notes.
+- Tap or drag directly on gravel. A gesture digs each crossed cell once; another gesture digs it again.
+- Completing a stroke synchronously computes 18 fixed ticks and captures every resulting world. The UI only plays those immutable frames; presentation sleeps never advance authority.
+- **Let water flow** captures 30 more fixed ticks. **Skip animation** ends visual playback at the already-computed final world; it does not pause authority.
+- Reduce Motion skips playback and shows the final world with static flux cues.
+- Backgrounding freezes playback, settles to the committed final world, and atomically saves it. Foregrounding does not advance time.
+- **Save this creek**, **Resume saved creek**, and **Reset fresh creek** live in the Creek menu.
+- Digging persistence uses `digging-surface-v1.json` and a typed envelope separate from the legacy `current.crick.json` snapshot.
+- VoiceOver sees one dynamically described creek surface plus named controls. Its factual summary reports dug patch count/location and measured newly wet patches without claiming success. **Show selected cell controls** exposes bounded directional selection and **Dig selected cell** instead of hundreds of low-value cell elements; controls wrap at large text sizes.
+- Gesture state clears on end, cancellation/disappearance, and disable. If interrupted after excavation but before end, already lowered ground remains valid while no implicit flow batch is committed.
 
-Visual tuning remains projection-only: water depth controls width, color, and opacity; bank/gravel layers and stone shadows create depth; and an in-world ring marks the desired pool function. The canonical test places the stone below that ring, proving the goal marker is not a prescribed placement slot. Render geometry uses `MTLBuffer` storage rather than transient constant bytes; dynamic foam uses a bounded three-buffer in-flight pool so the CPU never overwrites vertices still read by the GPU. The renderer validates the Swift/Metal vertex stride before pipeline creation; failure produces a visible accessible fallback instead of a blank viewport.
+`DiggingSession` and the retained `SimulationSession` are app adapters; `CreekCore` remains platform-neutral and performs no persistence or rendering I/O.
 
-## Physical-device and TestFlight checklist
+## Legacy Shape the Bend
 
-Simulator QA proves deterministic behavior and layout, but renewed physical-device comprehension is the final product gate for this revised slice. The prior `crick-sim-v4` device session failed because the response was too subtle and lacked agency, consequence, progress, failure, and payoff. Do not claim the revision resolves that failure until fresh physical-device players complete this bounded session:
+The menu opens the prior SwiftUI/Metal experience as a sheet. Its six-cell one-dimensional model, stone interaction, objective, bounded 20-tick playback, Before/After reading phase, Field Notes, and legacy snapshot file remain intact. Existing tests still exercise its full miss/retry/success/Keep path after entering through the new menu.
 
-- [ ] Fresh install opens on a visibly flowing reach at player tick 0 without an error or saved-state assumption.
-- [ ] Without coaching, the player identifies the stone, marked bend, creek direction, and need for both depth and calm.
-- [ ] Dragging reveals effective landing seats and confirms the accepted position; the outlet is never offered.
-- [ ] “Test this spot · 20 creek seconds” presents perceptible depth and current changes over one bounded observation.
-- [ ] A clearly failed upstream placement reads as failed in the creek itself, not only in result text.
-- [ ] The player moves the same stone for a stated reason, understands the evolved reach was retained, and can reach a cell-2 or cell-3 success.
-- [ ] Failure offers retry, success alone offers Keep, and neither invites meaningless repeated test taps.
-- [ ] Save/Resume preserves the selected rock, creek authority, and attempt closure without creating a second stone.
-- [ ] Missing Resume is disabled; corrupt/unreadable recovery shows useful language and preserves the current creek.
-- [ ] VoiceOver reads the guide, direction, cells in upstream-to-downstream order, controls, causal summary, diagnostics, and snapshot actions coherently.
-- [ ] Largest accessibility text, Increase Contrast, Reduce Motion, portrait, and landscape preserve reachable controls without overlap.
-- [ ] Background/foreground and process relaunch do not advance simulation or imply automatic restore.
-- [ ] Record launch responsiveness, heat, battery impact, and any unexpected signing/storage behavior on device.
+## Build and release status
 
-Fresh-device acceptance requires at least 5/6 players to complete one test and correctly explain both the depth and current change, at least 5/6 to identify success or the missed condition without Field Notes, and at least 4/6 to choose a retry location for a stated causal reason. No more than 1/6 should repeat the test because the first run felt unfinished. If players can read the result text but cannot point to matching creek evidence, the revised thesis has failed; progression or broader simulation is not an acceptable substitute.
+The local app version is **0.1.0 (7)**. See [PLAYTEST_READINESS.md](PLAYTEST_READINESS.md) for the current exploratory phone check, exact verification matrix, durable artifact paths, and signing limitations.
 
-**Physical-feedback gate: NOT PASSED.** Automated native/UI tests and simulator screenshots verify mechanics and presentation states, but no fresh-device player study has yet shown that people can identify the depth/current result from the creek before revealing the text. “Result text is the answer” remains the explicit failure condition; the acceptance ratios above still require physical playtest evidence.
+No TestFlight, public upload, credential/profile creation, or physical-device installation is implied. Final artifact signing status and the constrained local archive attempt are recorded in `PLAYTEST_READINESS.md` and the durable artifact manifest.
 
 ## Known limitations
 
-This is a deliberately small behavioral model, not CFD or engineering software:
-
-- The reach is one-dimensional and uses unit-width/unit-area cells.
-- Water transfer, outlet flow, transport capacity, erosion, and deposition are game-oriented coefficients rather than calibrated hydraulics.
-- Rocks are cell resistance values, not shaped rigid bodies; the seed is recorded but procedural generation is not yet implemented.
-- Sediment has one continuous class; banks, gravel sorting, wakes, eddies, side channels, and rock mobility are not modeled.
-- Feature evaluation for swimming holes and crossings is not implemented.
-- Snapshot migration, optimized offline catch-up, and richer rendering remain future work. The native iOS laboratory uses explicit Save/Resume for local snapshots.
+- Cardinal transfers make the water deliberately coarse; there is no diagonal edge, momentum, wake, or eddy model.
+- One fixed tick has no calibrated real-world duration.
+- Excavation removes height without retaining or placing spoil.
+- The source and outlet are fixed; terrain is authored rather than generated.
+- Canvas rendering favors a clear small experiment over mesh-level bank geometry.
+- Snapshot migration between future digging compatibility IDs is not implemented.
+- Automated tests establish mechanics, deterministic rerouting, persistence, and layout—not whether an uncoached person understands the interaction on a physical phone.

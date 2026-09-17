@@ -1,78 +1,59 @@
-# First playtest: 0.1.0 (1)
+# Digging experiment exploratory readiness — 0.1.0 (7)
 
-Updated 2026-09-05. Xcode 26.6 (17F113), iOS 26.5 SDK.
+Updated 2026-09-16. This document replaces the stale build-1 distribution checklist; historical text remains in git.
 
-## Ready locally
+## What is ready
 
-- Signed Release archive succeeds: `/tmp/crick-beta-ready.xcarchive`.
-- The archived app includes version `0.1.0`, build `1`, display name `Crick`, opaque app icon, generated launch/scene configuration, and declared iPhone/iPad orientations.
-- Signing team `X2ULA6KJUN` is preserved in both `project.yml` and the checked-in Xcode project.
-- All 20 Swift package tests and 8 app-session tests passed during this preparation.
-- The unchanged interactive UI test now passes on iPhone 17 Pro / iOS 26.5, including rock placement, Advance 10, Save, Advance 1, and Resume.
-- All 9 app/UI tests also pass on iPhone SE (3rd generation) / iOS 17.5 and iPad Pro 11-inch (M5) / iOS 26.5: 18 additional test runs, zero failures or skips.
+The app launches into **Dig the Bend**, an unscored 20 × 26 surface-water experiment. The old **Shape the Bend** experience remains available from the Creek menu. Build 7 is intended for one-person exploratory evaluation, not cohort acceptance and not TestFlight distribution.
 
-The original UI failure ran in a legacy 320×480 application window on an iPhone 17 Pro. Adding launch/scene configuration and supported orientations made the unchanged test pass. No simulation code or test assertions were changed.
+Automated readiness requires all of the following from final current code:
 
-The beta icon is a reproducible CoreGraphics drawing; source: `scripts/generate-app-icon.swift`. Its checked-in 1024×1024 PNG has no alpha channel. Xcode's asset compiler generates the device renditions.
+- `swift test` and `swift build -c release` pass;
+- XcodeGen regeneration produces no uncommitted surprise beyond the generated project update;
+- native and UI suites pass on the specified iPhone 15 Pro and iPhone SE simulators;
+- the digging UI test performs an actual surface drag (not the selected-cell fallback or menu), observes lowered cells, verifies 18 real ticks per stroke, repeats to deepen, and verifies save/reset/resume;
+- the retained legacy UI journey enters through the Creek menu and still completes its miss/retry/success path;
+- generic unsigned iPhoneOS and simulator Release artifacts succeed with build number 7;
+- after all tests, a constrained signed generic iOS Release archive succeeds with team `X2ULA6KJUN`, existing settings, and no provisioning updates;
+- final screenshots and a short simulator recording are inspected and stored outside the repository.
 
-`ITSAppUsesNonExemptEncryption` is false: this slice stores snapshots locally, includes no remote service or third-party SDK, and implements no custom cryptography. Revisit this declaration if dependencies or networking change.
+Final current-tree results: Swift package tests **40/40**; iPhone 15 Pro and iPhone SE (3rd generation), both iOS 17.5, **28/28 each** (**26 native + 2 UI**); Swift production, simulator Release, unsigned iPhoneOS Release, and development-signed generic archive all succeeded. The added native seam test verifies an interrupted brush resets when interaction is disabled. Exact evidence and artifact paths are recorded in `DIGGING_EXPERIMENT.md` and the durable manifest.
 
-## Next: Xcode Cloud → your phone
+## Five-minute phone exploration
 
-The screenshot confirms Xcode Cloud setup, not a completed cloud archive or TestFlight upload. Local changes must reach the remote branch before Cloud can build them.
+Do not coach a route and do not present a success condition.
 
-1. Use the remote branch containing these fixes in **Start Build**. Confirm the workflow uses `Crick.xcodeproj` and scheme `CrickiOS`.
-2. Select Xcode 26.6 or a compatible version with Swift 6.3 or later. `Package.swift` requires Swift tools 6.3.
-3. Include an **Archive** action for iOS. For a build that can later go to friends, select **TestFlight and App Store** as the distribution preparation. An internal-only build cannot later be used for external testing.
-4. Include a **Test** action on an available iPhone simulator. The scheme contains app-session and UI tests.
-5. In App Store Connect → the Crick app → **TestFlight**, create an internal group (for example, `First playtest`) with only your eligible App Store Connect account initially. Add a TestFlight internal-testing post-action to the Cloud workflow if you want successful archives assigned automatically, or assign the processed build manually.
-6. Start the cloud build. Wait for Archive to succeed and for the build to finish processing in TestFlight. If it fails, inspect the first actual error in the failed action; a successful Build action alone is not the distribution gate.
-7. Add the build to your internal group. Complete any requested test information or export-compliance questions. Install Apple's TestFlight app on your iPhone using the invited Apple Account, then install Crick.
-8. Complete the phone check below before adding other testers.
+1. Launch fresh. Ask what the person thinks the blue shape and brown/gravel field are, and where water is going.
+2. Ask them to try changing the creek. Observe whether they discover tap or drag without being told exact cells.
+3. After one stroke, ask what changed first (exposed lowered ground) and what changed after the bounded playback (wet cells/direction).
+4. Ask them to make a different route somewhere else. Repeated strokes should deepen a chosen path; there is no required answer.
+5. Use **Let water flow**, then **Skip animation** if caught during playback. Confirm the authoritative tick advances in fixed batches only.
+6. Save, dig or flow again, then Resume. Confirm the separate digging state returns. Reset should return a fresh tick-0 authored creek.
+7. Background and foreground during playback. It should settle to the already-computed final frame, save, and never use elapsed wall time.
+8. Open **Shape the Bend** from the menu and confirm the historical experience remains usable.
+9. With VoiceOver, open selected-cell controls, move selection, and use **Dig selected cell**. The creek should be one useful described element rather than hundreds of noisy cells.
+10. Check Reduce Motion, large text, portrait, and compact iPhone layout. Report clipping, illegible terrain/water contrast, heat, or confusing cause/effect.
 
-Cloud can manage signing, but App Store Connect upload, processing, and installation are not yet verified. Cloud may assign its own build number; use the number shown on the processed build. Keep the marketing version `0.1.0` for this beta series.
+Useful questions: “Where did you dig?”, “Where did water go afterward?”, “What would you try next?”, and “Did anything look like the one correct answer?” A problematic result is one where the person only detects change from tick text, mistakes the selected-cell outline for a goal, or sees an abstract heatmap rather than a gravel creek.
 
-Apple references: [Cloud distribution](https://developer.apple.com/documentation/xcode/distributing-your-xcode-cloud-builds-through-testflight), [distribution workflow](https://developer.apple.com/documentation/xcode/creating-a-workflow-that-builds-your-app-for-distribution), [test information](https://developer.apple.com/help/app-store-connect/test-a-beta-version/provide-test-information).
+## Signing and distribution honesty
 
-## Five-minute phone check
+`security find-identity -v -p codesigning` reports two valid local identities, including **Apple Development: Scott Opell (SAJR9U4DL2)**; the project team is `X2ULA6KJUN`. The final archive succeeded using only this existing setup, without `-allowProvisioningUpdates`, credential/account changes, new profiles, or upload. Strict `codesign` verification passed. Its wildcard development profile expires 2027-07-06 and contains two provisioned-device entries; the paired Scott iPhone was confirmed eligible and build 7 was installed successfully. Device app inventory confirms 0.1.0 (7).
 
-- Fresh launch: normal full-screen layout, baseline tick 0, no error.
-- Tap a plus: a rock appears and tick stays 0.
-- Advance 10: tick becomes 10 and the observed-change card appears.
-- Save, Advance 1, Resume: tick goes 10 → 11 → 10 and the rock remains.
-- Background/reopen: time does not advance itself. Relaunch starts fresh; Resume explicitly restores the saved creek.
-- Rotate and scroll: all controls remain reachable. Check large text and VoiceOver. If retaining iPad support, check an iPad too.
+The durable artifact set contains:
 
-The broader physical-device checklist and first-user questions remain in README.md. Touch, accessibility, heat/battery, and user understanding still need real-device evidence.
+- a zipped simulator `.app`, usable only with a compatible Simulator;
+- an explicitly labeled **unsigned** iPhoneOS Release `.app`, not installable on a physical phone as-is;
+- a verified Apple Development-signed iPhoneOS `.app` and its `.xcarchive` (not an App Store artifact);
+- final test/build/signing logs and two `.xcresult` bundles;
+- four inspected screenshots and an inspected 21.18-second simulator video retained from immediately before the final two nonvisual authority/lifecycle fixes; current-tree UI suites confirm appearance-facing journeys still pass.
 
-## Tracer/comparison revision status
+There is no TestFlight or public upload and no claim of physical-device validation. A successful development-signed archive is phone-installable only on devices allowed by its embedded profile; it is not an App Store distribution artifact. Build 7 is installed on the paired Scott iPhone, but launch and hands-on comprehension remain for the user to verify.
 
-The app now uses authored-centerline foam packets driven by immutable authoritative transfer/depth, captures the real flowing before state (including each evolved retry seam), and offers a bounded Before/After creek comparison before result reveal when comparison data is available. Reduce Motion uses static start/end travel-distance marks. The representative scripted failure is the clearly failed upstream seat rather than borderline cell 4.
+## Current limitations
 
-**Physical-feedback gate: NOT PASSED.** Simulator and automated checks cannot establish that players read the creek instead of relying on revealed result copy. Run the README acceptance study on physical devices before claiming this revision resolves that risk.
-
-## Tester copy
-
-Beta description:
-
-> Crick is an early creek-tending simulation. Place rocks, advance time in fixed steps, and observe changes in water depth and flow. This first beta focuses on a small interactive creek and local Save/Resume.
-
-What to Test:
-
-> Explore without instructions first and tell us what you thought the colors, arrows, and controls meant. Place a rock, press Advance 10 a few times, and describe where water pools. Save, advance again, and Resume. Report confusing behavior, clipped controls, or crashes, including your device and iOS version. Time advances only when you press Advance; reopening starts a fresh creek until you press Resume.
-
-Use your feedback email and review contact in App Store Connect. Friends outside your App Store Connect team require external testing and the first external build goes through TestFlight App Review. See [Apple's beta testing guide](https://developer.apple.com/tutorials/develop-in-swift/test-your-beta-app).
-
-## Local verification artifacts
-
-- Final archive: `/tmp/crick-beta-ready.xcarchive`
-- Final archive log: `/tmp/crick-beta-ready-archive.log`
-- Current iPhone 15 native/UI tests: `/tmp/crick-review-iphone15-final.log`
-- Current iPhone SE native/UI tests: `/tmp/crick-review-se-final.log`
-- Refreshed motion/comparison screenshots: `/tmp/crick-review-screens/`
-- Post-fix 6-second iPhone 15 foam recording: `/tmp/crick-tracer-flow.mp4`
-- Release package build: `/tmp/crick-review-release.log`
-- Core tests: `/tmp/crick-review-swift-test.log`
-- Additional device tests: `/tmp/crick-playtest-device-coverage.xcresult`
-
-These are local temporary artifacts, not uploaded builds.
+- This is coarse cardinal surface transfer, not calibrated hydraulics.
+- There is no momentum, rainfall, erosion, sediment, spoil placement, material mechanic, score, or objective.
+- Digging snapshot migration is not implemented beyond schema/compatibility rejection.
+- Simulator evidence cannot establish physical-device touch feel, performance, battery use, or uncoached comprehension.
+- The Canvas presentation intentionally exposes some cellular coarseness; evaluation should determine whether it still reads as creek and gravel rather than debug visualization.

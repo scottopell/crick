@@ -21,6 +21,127 @@ private func point(for anchor: SIMD2<Float>, in viewport: CGSize) -> CGPoint {
     )
 }
 
+@MainActor
+@Test("Digging session captures fixed frames and restores its separate envelope")
+func diggingSessionPersistence() throws {
+    let store = MemorySnapshotStore()
+    let session = DiggingSession(snapshotStore: store)
+    let coordinate = SurfaceCoordinate(column: 7, row: 10)
+    #expect(session.excavate([coordinate]))
+    let lowered = session.world
+    let frames = session.advanceCaptured(count: 18)
+    #expect(frames.count == 18)
+    #expect(frames.map(\.tick) == Array(1...18).map(UInt64.init))
+    #expect(session.world == frames.last)
+    try session.save()
+    session.reset()
+    #expect(session.world != frames.last)
+    try session.resume()
+    #expect(session.world == frames.last)
+    #expect(session.world != lowered)
+}
+
+@MainActor
+@Test("Repeated digging stroke increases authoritative excavation depth")
+func repeatedDiggingDepth() {
+    let session = DiggingSession(snapshotStore: MemorySnapshotStore())
+    let stroke = [
+        SurfaceCoordinate(column: 7, row: 7),
+        SurfaceCoordinate(column: 8, row: 9),
+        SurfaceCoordinate(column: 9, row: 10),
+    ]
+    #expect(session.excavate(stroke))
+    let first = session.excavationDepth(at: stroke[1])
+    #expect(session.excavate(stroke))
+    let second = session.excavationDepth(at: stroke[1])
+    #expect(abs((first ?? 0) - SurfaceWorld.excavationIncrement) < 1e-12)
+    #expect(abs((second ?? 0) - 2 * SurfaceWorld.excavationIncrement) < 1e-12)
+}
+
+@MainActor
+@Test("Corrupt digging snapshot is atomically rejected")
+func corruptDiggingResumeIsAtomic() throws {
+    let store = MemorySnapshotStore()
+    let session = DiggingSession(snapshotStore: store)
+    #expect(session.excavate([SurfaceCoordinate(column: 7, row: 10)]))
+    _ = session.advanceCaptured(count: 3)
+    let live = session.world
+    try session.save()
+
+    var envelope = try #require(JSONSerialization.jsonObject(with: store.data!) as? [String: Any])
+    var world = try #require(envelope["world"] as? [String: Any])
+    var source = try #require(world["source"] as? [String: Any])
+    source["column"] = -1
+    world["source"] = source
+    envelope["world"] = world
+    store.data = try JSONSerialization.data(withJSONObject: envelope)
+
+    #expect(throws: Error.self) { try session.resume() }
+    #expect(session.world == live)
+}
+
+@Test("Disabling an interrupted digging gesture resets transient brush state")
+func interruptedDiggingBrushReset() {
+    var brush = DiggingBrushState()
+    let first = SurfaceCoordinate(column: 7, row: 10)
+    let second = SurfaceCoordinate(column: 8, row: 10)
+
+    #expect(brush.takeFresh([first, second]) == [first, second])
+    brush.previousCoordinate = second
+    #expect(!brush.touched.isEmpty)
+
+    // The view calls this seam when interactionEnabled changes to false.
+    brush.reset()
+    #expect(brush.touched.isEmpty)
+    #expect(brush.previousCoordinate == nil)
+    #expect(brush.takeFresh([first]) == [first])
+}
+
+@MainActor
+@Test("Interrupted excavation remains safe without implicit flow")
+func interruptedDiggingDoesNotFlow() {
+    let session = DiggingSession(snapshotStore: MemorySnapshotStore())
+    let coordinate = SurfaceCoordinate(column: 7, row: 10)
+    #expect(session.excavate([coordinate]))
+    let tick = session.world.tick
+    let depth = session.excavationDepth(at: coordinate)
+    // Models a cancelled/disabled gesture: onGestureEnded is intentionally not sent.
+    #expect(session.world.tick == tick)
+    #expect(abs((depth ?? 0) - SurfaceWorld.excavationIncrement) < 1e-12)
+    #expect((try? session.world.validated()) != nil)
+}
+
+@MainActor
+@Test("Selected-cell accessibility path stays inside the safe digging boundary")
+func selectedCellBoundary() {
+    let session = DiggingSession(snapshotStore: MemorySnapshotStore())
+    for _ in 0..<100 {
+        session.moveSelection(columns: -1, rows: -1)
+    }
+    #expect(session.selectedCoordinate == SurfaceCoordinate(column: 1, row: 1))
+    for _ in 0..<100 {
+        session.moveSelection(columns: 1, rows: 1)
+    }
+    #expect(session.selectedCoordinate == SurfaceCoordinate(
+        column: session.world.width - 2,
+        row: session.world.height - 2
+    ))
+}
+
+@Test("Surface screen and map coordinates round-trip")
+func surfaceMapCoordinateRoundTrip() {
+    let layout = SurfaceMapLayout(width: 20, height: 26, viewport: CGSize(width: 390, height: 610))
+    for row in 0..<26 {
+        for column in 0..<20 {
+            let coordinate = SurfaceCoordinate(column: column, row: row)
+            let center = layout.center(of: coordinate)
+            #expect(center != nil)
+            #expect(layout.coordinate(at: center!) == coordinate)
+        }
+    }
+    #expect(layout.coordinate(at: CGPoint(x: -1, y: -1)) == nil)
+}
+
 // Shape the Bend (4): eligible picking excludes the outlet and occupied seat.
 @Test("Metal creek picking accepts only eligible authored stone seats")
 func creekPickingEligibility() {

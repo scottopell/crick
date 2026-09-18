@@ -107,7 +107,22 @@ func diggingSessionCapturedFixtureResume() throws {
     }
 
     for _ in 0..<3 {
-        XCTAssertTrue(session.excavate(footprint))
+        let start = try XCTUnwrap(footprint.first)
+        let floor = try XCTUnwrap(session.cutFloor(startingAt: start))
+        let alreadyLower = footprint.first { coordinate in
+            let index = session.world.index(of: coordinate)!
+            return session.world.cells[index].groundHeight < floor
+        }
+        let lowerBefore = alreadyLower.map { session.world.cells[session.world.index(of: $0)!].groundHeight }
+        XCTAssertTrue(session.excavate(footprint, toFloor: floor))
+        if let alreadyLower, let lowerBefore {
+            XCTAssertEqual(
+                session.world.cells[session.world.index(of: alreadyLower)!].groundHeight,
+                lowerBefore,
+                accuracy: 1e-12,
+                "one captured gesture floor must never raise an already lower cell"
+            )
+        }
         inspect(session.advanceCaptured(count: DiggingSession.automaticTicks))
     }
     var observeActions = 0
@@ -119,7 +134,9 @@ func diggingSessionCapturedFixtureResume() throws {
     XCTAssertTrue(measuredLowerRouteFlow, "three strokes must create actual flow across the captured lower route")
     XCTAssertFalse(newlyWetFootprint.isEmpty, "the exact captured footprint must gain visibly wet cells")
     XCTAssertLessThan(observeActions, 15, "lower-route flow must occur inside the bounded user Observe sequence")
-    XCTAssertGreaterThanOrEqual(session.world.tick, 852)
+    XCTAssertGreaterThanOrEqual(session.world.tick, 594)
+    // Build 8 required repeated per-cell scoops. Build 9 intentionally cuts the
+    // connected gesture to one captured floor, so the same route opens earlier.
     attachRenderedDigging(session: session, named: "Exact fixture — after three strokes and lower-route flow")
     XCTAssertEqual(try Data(contentsOf: fixture), originalData, "visual proof must not mutate its bundled fixture")
 }
@@ -144,6 +161,178 @@ private func attachRenderedDigging(session: DiggingSession, named name: String) 
 }
 
 @MainActor
+final class CausalErosionVisualProofTests: XCTestCase {
+    func testPairedCutAndUncutWorldsRenderAtSameTickWithMeasuredDifferences() throws {
+        let initial = DiggingExperimentTerrain.newWorld(settlingTicks: 0)
+        var uncut = initial
+        var cutWorld = initial
+        let cut = SurfaceCoordinate(column: 6, row: 5)
+        XCTAssertEqual(uncut.totalCarriedSediment, 0, accuracy: 1e-12)
+        XCTAssertEqual(cutWorld.totalCarriedSediment, 0, accuracy: 1e-12)
+        let removed = try cutWorld.excavate(cut, toFloor: cutWorld.cutFloor(startingAt: cut))
+
+        struct Measures {
+            var erosion: [Double]
+            var deposition: [Double]
+            var flux: [Double]
+        }
+        func run(_ world: inout SurfaceWorld) -> Measures {
+            var value = Measures(
+                erosion: .init(repeating: 0, count: world.cells.count),
+                deposition: .init(repeating: 0, count: world.cells.count),
+                flux: .init(repeating: 0, count: world.cells.count)
+            )
+            for _ in 0..<1_200 {
+                let water = world.cells.map(\.waterDepth)
+                let sediment = world.cells.map(\.sediment)
+                let ground = world.cells.map(\.groundHeight)
+                XCTAssertTrue(world.step())
+                for transfer in world.lastEdgeTransfers where transfer.to.row > transfer.from.row {
+                    let donor = world.index(of: transfer.from)!
+                    let receiver = world.index(of: transfer.to)!
+                    if water[donor] > 0 {
+                        value.flux[receiver] += sediment[donor] * transfer.amount / water[donor]
+                    }
+                }
+                for index in world.cells.indices {
+                    let delta = world.cells[index].groundHeight - ground[index]
+                    if delta < 0 { value.erosion[index] -= delta }
+                    if delta > 0 { value.deposition[index] += delta }
+                }
+            }
+            return value
+        }
+        let baseline = run(&uncut)
+        let intervention = run(&cutWorld)
+        let erosionIndex = cutWorld.index(of: .init(column: 6, row: 6))!
+        let fluxIndex = cutWorld.index(of: .init(column: 5, row: 6))!
+        let depositionIndex = cutWorld.index(of: .init(column: 5, row: 6))!
+        let erosionEffect = intervention.erosion[erosionIndex] - baseline.erosion[erosionIndex]
+        let fluxEffect = intervention.flux[fluxIndex] - baseline.flux[fluxIndex]
+        let depositionEffect = intervention.deposition[depositionIndex] - baseline.deposition[depositionIndex]
+        XCTAssertEqual(uncut.tick, cutWorld.tick)
+        XCTAssertEqual(cutWorld.tick, 1_200)
+        XCTAssertGreaterThan(erosionEffect, 0)
+        XCTAssertGreaterThan(fluxEffect, 0)
+        XCTAssertGreaterThan(depositionEffect, 0)
+        XCTAssertEqual(cutWorld.materialLedger.excavated - uncut.materialLedger.excavated, removed, accuracy: 1e-12)
+
+        attachRenderedWorld(uncut, metadata: "CONTROL · uncut · t1200", named: "Paired causal control — uncut at tick 1200")
+        attachRenderedWorld(cutWorld, metadata: "INTERVENTION · floor cut (6,5) · t1200", named: "Paired causal intervention — cut at tick 1200")
+        let evidence: [String: Any] = [
+            "initial_worlds_equal": true,
+            "initial_sediment_each": 0,
+            "tick_each": 1_200,
+            "cut": ["column": cut.column, "row": cut.row, "removed": removed],
+            "erosion_cut_minus_control": erosionEffect,
+            "downstream_sediment_flux_cut_minus_control": fluxEffect,
+            "deposition_cut_minus_control": depositionEffect,
+            "excavated_ledger_cut_minus_control": cutWorld.materialLedger.excavated - uncut.materialLedger.excavated,
+            "exported_ledger_cut_minus_control": cutWorld.materialLedger.exported - uncut.materialLedger.exported,
+        ]
+        let attachment = XCTAttachment(data: try JSONSerialization.data(withJSONObject: evidence, options: [.prettyPrinted, .sortedKeys]), uniformTypeIdentifier: "public.json")
+        attachment.name = "paired-causal-evidence.json"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+
+    private func attachRenderedWorld(_ world: SurfaceWorld, metadata: String, named name: String) {
+        let root = VStack(spacing: 6) {
+            Text(metadata)
+                .font(.caption2.monospaced())
+                .foregroundStyle(.white)
+                .padding(.horizontal, 6)
+            DiggingSurfaceView(
+                world: world,
+                selectedCoordinate: nil,
+                reduceMotion: true,
+                interactionEnabled: false,
+                accessibilitySummary: metadata,
+                onDigCells: { _, _ in },
+                onGestureEnded: {}
+            )
+        }
+        .background(Color(red: 0.055, green: 0.072, blue: 0.045))
+        .preferredColorScheme(.dark)
+        let controller = UIHostingController(rootView: root)
+        let size = CGSize(width: 393, height: 852)
+        controller.view.bounds = CGRect(origin: .zero, size: size)
+        controller.view.layoutIfNeeded()
+        let image = UIGraphicsImageRenderer(size: size).image { _ in
+            controller.view.drawHierarchy(in: controller.view.bounds, afterScreenUpdates: true)
+        }
+        let attachment = XCTAttachment(image: image)
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+}
+
+@MainActor
+@Test("Live observation finalizes after eighteen physical ticks at either pulse factor")
+func liveObservationUsesPhysicalTicks() {
+    let coordinate = SurfaceCoordinate(column: 7, row: 10)
+    let one = DiggingSession(snapshotStore: MemorySnapshotStore())
+    let two = DiggingSession(snapshotStore: MemorySnapshotStore())
+    #expect(one.excavate([coordinate]))
+    #expect(two.excavate([coordinate]))
+    let pending = one.sceneSummary
+
+    for _ in 0..<17 { _ = one.advanceLive(steps: 1) }
+    _ = two.advanceLive(steps: 2)
+    for _ in 0..<7 { _ = two.advanceLive(steps: 2) }
+    _ = two.advanceLive(steps: 1)
+    #expect(one.sceneSummary == pending)
+    #expect(two.sceneSummary == pending)
+
+    _ = one.advanceLive(steps: 1)
+    _ = two.advanceLive(steps: 1)
+    #expect(one.world == two.world)
+    #expect(one.sceneSummary == two.sceneSummary)
+    #expect(one.sceneSummary != pending)
+    #expect(one.message == "Water responded for 18 physical ticks")
+    #expect(two.message == "Water responded for 18 physical ticks")
+}
+
+@Test("Live clock hold, release, and ineligible dialog pulses are deterministic")
+func liveClockStateDriver() {
+    var clock = LiveClockState()
+    #expect(clock.stepsForPulse(isEligible: true) == 1)
+    clock.setHoldingTwoX(true)
+    #expect(clock.stepsForPulse(isEligible: true) == 2)
+    clock.setHoldingTwoX(false)
+    #expect(clock.stepsForPulse(isEligible: true) == 1)
+    clock.setHoldingTwoX(true)
+    #expect(clock.stepsForPulse(isEligible: false) == 0)
+    #expect(!clock.isHoldingTwoX)
+    #expect(clock.stepsForPulse(isEligible: true) == 1)
+}
+
+@MainActor
+@Test("Live speed partitions identical physical ticks and release returns to one")
+func liveSpeedTickPartition() {
+    let one = DiggingSession(snapshotStore: MemorySnapshotStore())
+    let two = DiggingSession(snapshotStore: MemorySnapshotStore())
+    for _ in 0..<20 { _ = one.advanceLive(steps: 1) }
+    for _ in 0..<10 { _ = two.advanceLive(steps: 2) }
+    #expect(one.world == two.world)
+    // Release semantics are represented by the next scheduler pulse returning to one.
+    _ = two.advanceLive(steps: 1)
+    #expect(two.world.tick == 21)
+}
+
+@MainActor
+@Test("No elapsed background interval advances live authority")
+func noElapsedBackgroundCatchup() async throws {
+    let session = DiggingSession(snapshotStore: MemorySnapshotStore())
+    let tick = session.world.tick
+    try await Task.sleep(for: .milliseconds(20))
+    #expect(session.world.tick == tick)
+    _ = session.advanceLive(steps: 1)
+    #expect(session.world.tick == tick + 1)
+}
+
+@MainActor
 @Test("Repeated digging stroke increases authoritative excavation depth")
 func repeatedDiggingDepth() {
     let session = DiggingSession(snapshotStore: MemorySnapshotStore())
@@ -156,8 +345,12 @@ func repeatedDiggingDepth() {
     let first = session.excavationDepth(at: stroke[1])
     #expect(session.excavate(stroke))
     let second = session.excavationDepth(at: stroke[1])
-    #expect(abs((first ?? 0) - SurfaceWorld.excavationIncrement) < 1e-12)
-    #expect(abs((second ?? 0) - 2 * SurfaceWorld.excavationIncrement) < 1e-12)
+    #expect((first ?? 0) > 0)
+    #expect((second ?? 0) > (first ?? 0))
+    #expect(abs(((second ?? 0) - (first ?? 0)) - SurfaceWorld.excavationIncrement) < 1e-12)
+    let commonFloor = session.world.cells[session.world.index(of: stroke[0])!].groundHeight
+    #expect(session.world.cells[session.world.index(of: stroke[1])!].groundHeight == commonFloor)
+    #expect(session.world.cells[session.world.index(of: stroke[2])!].groundHeight == commonFloor)
 }
 
 @MainActor
@@ -180,6 +373,90 @@ func corruptDiggingResumeIsAtomic() throws {
 
     #expect(throws: Error.self) { try session.resume() }
     #expect(session.world == live)
+}
+
+@MainActor
+@Test("Digging resume rejects both envelope/world version hybrids atomically")
+func diggingEnvelopeWorldHybridsRejected() throws {
+    let store = MemorySnapshotStore()
+    let session = DiggingSession(snapshotStore: store)
+    try session.save()
+    let live = session.world
+    let current = try #require(JSONSerialization.jsonObject(with: store.data!) as? [String: Any])
+
+    var v1EnvelopeV2World = current
+    v1EnvelopeV2World["schemaVersion"] = 1
+    store.data = try JSONSerialization.data(withJSONObject: v1EnvelopeV2World)
+    #expect(throws: DiggingSessionError.unsupportedSnapshot) { try session.resume() }
+    #expect(session.world == live)
+
+    var v2EnvelopeV1World = current
+    var legacyWorld = try #require(v2EnvelopeV1World["world"] as? [String: Any])
+    legacyWorld["schemaVersion"] = 1
+    legacyWorld["compatibilityID"] = SurfaceWorld.legacyCompatibilityID
+    legacyWorld.removeValue(forKey: "materialLedger")
+    var legacyCells = try #require(legacyWorld["cells"] as? [[String: Any]])
+    for index in legacyCells.indices { legacyCells[index].removeValue(forKey: "sediment") }
+    legacyWorld["cells"] = legacyCells
+    v2EnvelopeV1World["world"] = legacyWorld
+    store.data = try JSONSerialization.data(withJSONObject: v2EnvelopeV1World)
+    #expect(throws: DiggingSessionError.unsupportedSnapshot) { try session.resume() }
+    #expect(session.world == live)
+}
+
+@MainActor
+@Test("First migrated file save retains exact v1 bytes and never overwrites backup")
+func migratedFileBackupRetainsOriginalBytes() throws {
+    let fixture = try #require(Bundle(for: MemorySnapshotStore.self).url(
+        forResource: "barrier-snapshot-tick-540",
+        withExtension: "json"
+    ))
+    let original = try Data(contentsOf: fixture)
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let url = directory.appendingPathComponent("digging.json")
+    try original.write(to: url)
+    let session = DiggingSession(snapshotStore: FileSnapshotStore(url: url))
+
+    try session.resume()
+    try session.save()
+    let backup = url.deletingPathExtension().appendingPathExtension("v1-backup.json")
+    #expect(try Data(contentsOf: backup) == original)
+    let firstBackup = try Data(contentsOf: backup)
+
+    #expect(session.excavate([SurfaceCoordinate(column: 7, row: 10)]))
+    try session.save()
+    #expect(try Data(contentsOf: backup) == firstBackup)
+    #expect(try Data(contentsOf: url) != original)
+}
+
+@MainActor
+@Test("Launch or background save preserves exact v1 file without resume")
+func saveWithoutResumePreservesLegacyBytes() throws {
+    let fixture = try #require(Bundle(for: MemorySnapshotStore.self).url(
+        forResource: "barrier-snapshot-tick-540",
+        withExtension: "json"
+    ))
+    let original = try Data(contentsOf: fixture)
+    let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+    let url = directory.appendingPathComponent("digging.json")
+    try original.write(to: url)
+
+    // This is the launch-created fresh session followed directly by the same save
+    // used by backgrounding; no resume or migration flag primes preservation.
+    let session = DiggingSession(snapshotStore: FileSnapshotStore(url: url))
+    try session.save()
+
+    let backup = url.deletingPathExtension().appendingPathExtension("v1-backup.json")
+    #expect(try Data(contentsOf: backup) == original)
+    let current = try JSONDecoder().decode(DiggingSnapshotEnvelope.self, from: Data(contentsOf: url))
+    #expect(current.schemaVersion == DiggingSnapshotEnvelope.schemaVersion)
+    #expect(current.world.originalSchemaVersion == SurfaceWorld.schemaVersion)
 }
 
 @Test("Disabling an interrupted digging gesture resets transient brush state")

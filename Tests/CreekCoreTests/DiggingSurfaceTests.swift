@@ -37,6 +37,211 @@ func freeInteriorExcavation() throws {
     }
 }
 
+@Test("One captured floor is cut-only across different and pre-lowered heights")
+func capturedFloorIsPersistentAndCutOnly() throws {
+    var world = DiggingExperimentTerrain.newWorld(settlingTicks: 0)
+    let start = SurfaceCoordinate(column: 4, row: 4)
+    let high = SurfaceCoordinate(column: 15, row: 4)
+    let low = SurfaceCoordinate(column: 5, row: 20)
+    let floor = try world.cutFloor(startingAt: start)
+    _ = try world.excavate(low, toFloor: world.safeGlobalCutFloor)
+    let lowBefore = world.cells[world.index(of: low)!].groundHeight
+
+    _ = try world.excavate(start, toFloor: floor)
+    _ = try world.excavate(high, toFloor: floor)
+    _ = try world.excavate(low, toFloor: floor)
+
+    #expect(world.cells[world.index(of: start)!].groundHeight == floor)
+    #expect(world.cells[world.index(of: high)!].groundHeight == floor)
+    #expect(world.cells[world.index(of: low)!].groundHeight == lowBefore)
+    #expect(abs(world.materialResidual) < 1e-8)
+}
+
+@Test("No water flow performs no erosion")
+func noFlowNoErosion() throws {
+    let cells = Array(repeating: SurfaceCell(groundHeight: 1), count: 25)
+    var world = try SurfaceWorld(
+        width: 5, height: 5, cells: cells,
+        source: .init(column: 2, row: 0), outlet: .init(column: 2, row: 4),
+        sourceWaterPerTick: 0, sourceDepthCap: 0
+    )
+    let before = world.cells.map(\.groundHeight)
+    world.step(count: 200)
+    #expect(world.cells.map(\.groundHeight) == before)
+    #expect(world.totalCarriedSediment == 0)
+}
+
+@Test("A floor cut has positive downstream material effects against an uncut causal control")
+func causalCutErosionTransportDeposition() throws {
+    // This is a paired intervention: both worlds begin as the exact same ordinary
+    // authored terrain with no settling and therefore no pre-existing sediment.
+    let initial = DiggingExperimentTerrain.newWorld(settlingTicks: 0)
+    #expect(initial.totalCarriedSediment == 0)
+    var uncut = initial
+    var cutWorld = initial
+    let cut = SurfaceCoordinate(column: 6, row: 5)
+    let removed = try cutWorld.excavate(cut, toFloor: cutWorld.cutFloor(startingAt: cut))
+    #expect(removed > 0)
+    #expect(uncut.totalCarriedSediment == 0)
+    #expect(cutWorld.totalCarriedSediment == 0)
+
+    struct Measurements {
+        var erosion: [Double]
+        var deposition: [Double]
+        var downstreamSedimentFlux: [Double]
+    }
+    func run(_ world: inout SurfaceWorld) -> Measurements {
+        var result = Measurements(
+            erosion: .init(repeating: 0, count: world.cells.count),
+            deposition: .init(repeating: 0, count: world.cells.count),
+            downstreamSedimentFlux: .init(repeating: 0, count: world.cells.count)
+        )
+        for _ in 0..<1_200 {
+            let preWater = world.cells.map(\.waterDepth)
+            let preSediment = world.cells.map(\.sediment)
+            let preGround = world.cells.map(\.groundHeight)
+            guard world.step() else { break }
+            for transfer in world.lastEdgeTransfers where transfer.to.row > transfer.from.row {
+                let donor = world.index(of: transfer.from)!
+                let receiver = world.index(of: transfer.to)!
+                if preWater[donor] > 0 {
+                    result.downstreamSedimentFlux[receiver] += preSediment[donor] * transfer.amount / preWater[donor]
+                }
+            }
+            for index in world.cells.indices {
+                let delta = world.cells[index].groundHeight - preGround[index]
+                if delta < 0 { result.erosion[index] -= delta }
+                if delta > 0 { result.deposition[index] += delta }
+            }
+        }
+        return result
+    }
+
+    let baseline = run(&uncut)
+    let intervention = run(&cutWorld)
+    // Fixed nearby downstream observations, chosen from the ordinary map rather
+    // than by searching for a solver optimum.
+    let erosionIndex = cutWorld.index(of: .init(column: 6, row: 6))!
+    let fluxIndex = cutWorld.index(of: .init(column: 5, row: 6))!
+    let depositionIndex = cutWorld.index(of: .init(column: 5, row: 6))!
+    let erosionEffect = intervention.erosion[erosionIndex] - baseline.erosion[erosionIndex]
+    let fluxEffect = intervention.downstreamSedimentFlux[fluxIndex] - baseline.downstreamSedimentFlux[fluxIndex]
+    let depositionEffect = intervention.deposition[depositionIndex] - baseline.deposition[depositionIndex]
+
+    #expect(uncut.tick == 1_200)
+    #expect(cutWorld.tick == uncut.tick)
+    #expect(erosionEffect > 0)
+    #expect(fluxEffect > 0)
+    #expect(depositionEffect > 0)
+    #expect(abs(cutWorld.materialLedger.excavated - uncut.materialLedger.excavated - removed) < 1e-12)
+    #expect(abs(uncut.materialResidual) < 1e-7)
+    #expect(abs(cutWorld.materialResidual) < 1e-7)
+    let e = cutWorld.coordinate(for: erosionIndex)!
+    let f = cutWorld.coordinate(for: fluxIndex)!
+    let d = cutWorld.coordinate(for: depositionIndex)!
+    print("CAUSAL_CUT paired_tick=\(cutWorld.tick) cut=\(cut.column),\(cut.row) removed=\(removed) erosion_cut_minus_control=\(e.column),\(e.row):\(erosionEffect) sediment_flux_cut_minus_control=\(f.column),\(f.row):\(fluxEffect) deposition_cut_minus_control=\(d.column),\(d.row):\(depositionEffect) excavated_ledger_cut_minus_control=\(cutWorld.materialLedger.excavated - uncut.materialLedger.excavated) exported_ledger_cut_minus_control=\(cutWorld.materialLedger.exported - uncut.materialLedger.exported)")
+}
+
+@Test("Sediment advects and deposits when carrying capacity falls")
+func sedimentTransportDepositsDownstream() throws {
+    let width = 3
+    var cells = Array(repeating: SurfaceCell(groundHeight: 1), count: 9)
+    cells[1] = SurfaceCell(groundHeight: 1.2, waterDepth: 0.3, sediment: 0.04)
+    cells[4] = SurfaceCell(groundHeight: 1.0, waterDepth: 0.05)
+    cells[7] = SurfaceCell(groundHeight: 1.0, waterDepth: 0.05)
+    var world = try SurfaceWorld(
+        width: width, height: 3, cells: cells,
+        source: .init(column: 1, row: 0), outlet: .init(column: 1, row: 2),
+        sourceWaterPerTick: 0, sourceDepthCap: 0
+    )
+    let downstreamBefore = world.cells[4].groundHeight
+    world.step(count: 40)
+    #expect(world.cells[4].groundHeight > downstreamBefore || world.cells[7].groundHeight > 1)
+    #expect(abs(world.materialResidual) < 1e-8)
+}
+
+@Test("Closed material ledger remains conserved over a long run")
+func closedMaterialLedgerLongRun() throws {
+    var world = DiggingExperimentTerrain.newWorld()
+    let floor = try world.cutFloor(startingAt: .init(column: 7, row: 8))
+    for row in 8...14 { _ = try world.excavate(.init(column: 7, row: row), toFloor: floor) }
+    world.step(count: 1_000)
+    #expect(abs(world.materialResidual) < 1e-7)
+    #expect((try? world.validated()) != nil)
+}
+
+@Test("Schema one world migrates exact height and water with zero sediment")
+func v1SurfaceMigration() throws {
+    let current = DiggingExperimentTerrain.newWorld(settlingTicks: 0)
+    var json = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(current)) as? [String: Any])
+    json["schemaVersion"] = 1
+    json["compatibilityID"] = SurfaceWorld.legacyCompatibilityID
+    json.removeValue(forKey: "materialLedger")
+    var oldCells = json["cells"] as! [[String: Any]]
+    for index in oldCells.indices { oldCells[index].removeValue(forKey: "sediment") }
+    json["cells"] = oldCells
+    let data = try JSONSerialization.data(withJSONObject: json)
+    let migrated = try JSONDecoder().decode(SurfaceWorld.self, from: data)
+    #expect(migrated.schemaVersion == 2)
+    #expect(migrated.cells.map(\.groundHeight) == current.cells.map(\.groundHeight))
+    #expect(migrated.cells.map(\.waterDepth) == current.cells.map(\.waterDepth))
+    #expect(migrated.totalCarriedSediment == 0)
+    #expect(abs(migrated.materialResidual) < 1e-8)
+}
+
+@Test("Schema two rejects absent material ledger and absent cell sediment")
+func v2SurfaceRequiresMaterialFields() throws {
+    let current = DiggingExperimentTerrain.newWorld(settlingTicks: 0)
+    let encoded = try JSONEncoder().encode(current)
+
+    var withoutLedger = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+    withoutLedger.removeValue(forKey: "materialLedger")
+    #expect(throws: DecodingError.self) {
+        try JSONDecoder().decode(
+            SurfaceWorld.self,
+            from: JSONSerialization.data(withJSONObject: withoutLedger)
+        )
+    }
+
+    var withoutSediment = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+    var cells = try #require(withoutSediment["cells"] as? [[String: Any]])
+    cells[0].removeValue(forKey: "sediment")
+    withoutSediment["cells"] = cells
+    #expect(throws: DecodingError.self) {
+        try JSONDecoder().decode(
+            SurfaceWorld.self,
+            from: JSONSerialization.data(withJSONObject: withoutSediment)
+        )
+    }
+}
+
+@Test("A fully drained outlet exports its full proportional sediment before bed exchange")
+func fullDrainExportsAllOutletSediment() throws {
+    // Equal surfaces prevent advection: the outlet's 0.04 water is the exact
+    // post-advection mixture and the 0.042 drain removes all of it.
+    var cells = Array(repeating: SurfaceCell(groundHeight: 1.04), count: 9)
+    cells[7] = SurfaceCell(groundHeight: 1, waterDepth: 0.04, sediment: 0.01)
+    var world = try SurfaceWorld(
+        width: 3,
+        height: 3,
+        cells: cells,
+        source: .init(column: 1, row: 0),
+        outlet: .init(column: 1, row: 2),
+        sourceWaterPerTick: 0,
+        sourceDepthCap: 0
+    )
+    let groundBefore = world.cells[7].groundHeight
+
+    let completed = world.step()
+    #expect(completed)
+
+    #expect(abs(world.cells[7].waterDepth) < 1e-12)
+    #expect(abs(world.cells[7].sediment) < 1e-12)
+    #expect(abs(world.materialLedger.exported - 0.01) < 1e-12)
+    #expect(world.cells[7].groundHeight == groundBefore)
+    #expect(abs(world.materialResidual) < 1e-12)
+}
+
 @Test("Four-neighbor fixed ticks are exact, conservative, and aggregate-capped")
 func conservativeSurfaceTick() throws {
     let width = 5

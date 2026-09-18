@@ -19,23 +19,30 @@ public struct SurfaceCell: Codable, Equatable, Sendable {
     /// Signed net water movement during the last tick, in grid axes.
     public var flowX: Double
     public var flowY: Double
+    /// Material currently carried by water in this cell.
+    public var sediment: Double
 
     public init(
         groundHeight: Double,
         authoredGroundHeight: Double? = nil,
         waterDepth: Double = 0,
         flowX: Double = 0,
-        flowY: Double = 0
+        flowY: Double = 0,
+        sediment: Double = 0
     ) {
         self.groundHeight = groundHeight
         self.authoredGroundHeight = authoredGroundHeight ?? groundHeight
         self.waterDepth = waterDepth
         self.flowX = flowX
         self.flowY = flowY
+        self.sediment = sediment
     }
 
     public var surfaceHeight: Double { groundHeight + waterDepth }
-    public var excavationDepth: Double { authoredGroundHeight - groundHeight }
+    public var excavationDepth: Double { max(0, authoredGroundHeight - groundHeight) }
+    /// Current net bed rise above the authored reference height. This is a
+    /// present-state rendering value, not cumulative deposition through time.
+    public var netBedRise: Double { max(0, groundHeight - authoredGroundHeight) }
 }
 
 public struct SurfaceWaterLedger: Codable, Equatable, Sendable {
@@ -47,6 +54,18 @@ public struct SurfaceWaterLedger: Codable, Equatable, Sendable {
         self.initialWater = initialWater
         self.waterIn = waterIn
         self.waterOut = waterOut
+    }
+}
+
+public struct SurfaceMaterialLedger: Codable, Equatable, Sendable {
+    public var initialGround: Double
+    public var excavated: Double
+    public var exported: Double
+
+    public init(initialGround: Double, excavated: Double = 0, exported: Double = 0) {
+        self.initialGround = initialGround
+        self.excavated = excavated
+        self.exported = exported
     }
 }
 
@@ -95,14 +114,37 @@ public enum SurfaceWorldError: Error, Equatable, Sendable {
     case invalidState
 }
 
+private struct LegacySurfaceCell: Decodable {
+    let groundHeight: Double
+    let authoredGroundHeight: Double
+    let waterDepth: Double
+    let flowX: Double
+    let flowY: Double
+
+    var migrated: SurfaceCell {
+        SurfaceCell(
+            groundHeight: groundHeight,
+            authoredGroundHeight: authoredGroundHeight,
+            waterDepth: waterDepth,
+            flowX: flowX,
+            flowY: flowY,
+            sediment: 0
+        )
+    }
+}
+
 public struct SurfaceWorld: Codable, Equatable, Sendable {
-    public static let schemaVersion = 1
-    public static let compatibilityID = "crick-digging-surface-v1"
+    public static let schemaVersion = 2
+    public static let compatibilityID = "crick-digging-surface-v2"
+    public static let legacyCompatibilityID = "crick-digging-surface-v1"
     /// The default interaction scoop. Persisted v1 worlds store absolute ground
     /// heights, so increasing this future edit amount does not reinterpret or
     /// invalidate shallower cuts made by earlier builds.
     public static let excavationIncrement = 0.11
     public static let maximumExcavationDepth = 0.44
+    public static let maximumBedRise = 0.22
+    public static let erosionPerTickLimit = 0.0012
+    public static let depositionPerTickLimit = 0.0024
     public static let hydraulicTolerance = 0.002
 
     public private(set) var schemaVersion: Int
@@ -116,32 +158,78 @@ public struct SurfaceWorld: Codable, Equatable, Sendable {
     public private(set) var sourceWaterPerTick: Double
     public private(set) var sourceDepthCap: Double
     public private(set) var ledger: SurfaceWaterLedger
+    public private(set) var materialLedger: SurfaceMaterialLedger
     public private(set) var lastEdgeTransfers: [SurfaceEdgeTransfer]
+    /// Preserves the validated on-disk identity so an outer envelope can reject
+    /// cross-version hybrids before assigning the migrated world to live state.
+    public private(set) var originalSchemaVersion: Int
+    public private(set) var originalCompatibilityID: String
 
     private enum CodingKeys: String, CodingKey {
         case schemaVersion, compatibilityID, width, height, tick, cells
-        case source, outlet, sourceWaterPerTick, sourceDepthCap, ledger
+        case source, outlet, sourceWaterPerTick, sourceDepthCap, ledger, materialLedger
         case lastEdgeTransfers
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        schemaVersion = try container.decode(Int.self, forKey: .schemaVersion)
-        compatibilityID = try container.decode(String.self, forKey: .compatibilityID)
+        let decodedVersion = try container.decode(Int.self, forKey: .schemaVersion)
+        let decodedCompatibility = try container.decode(String.self, forKey: .compatibilityID)
+        guard (decodedVersion == Self.schemaVersion && decodedCompatibility == Self.compatibilityID)
+            || (decodedVersion == 1 && decodedCompatibility == Self.legacyCompatibilityID) else {
+            throw SurfaceWorldError.invalidState
+        }
+        originalSchemaVersion = decodedVersion
+        originalCompatibilityID = decodedCompatibility
+        schemaVersion = Self.schemaVersion
+        compatibilityID = Self.compatibilityID
         width = try container.decode(Int.self, forKey: .width)
         height = try container.decode(Int.self, forKey: .height)
         tick = try container.decode(UInt64.self, forKey: .tick)
-        cells = try container.decode([SurfaceCell].self, forKey: .cells)
+        if decodedVersion == 1 {
+            cells = try container.decode([LegacySurfaceCell].self, forKey: .cells).map(\.migrated)
+        } else {
+            // Current snapshots are intentionally strict: every v2 cell must carry
+            // its explicit sediment state.
+            cells = try container.decode([SurfaceCell].self, forKey: .cells)
+        }
         source = try container.decode(SurfaceCoordinate.self, forKey: .source)
         outlet = try container.decode(SurfaceCoordinate.self, forKey: .outlet)
         sourceWaterPerTick = try container.decode(Double.self, forKey: .sourceWaterPerTick)
         sourceDepthCap = try container.decode(Double.self, forKey: .sourceDepthCap)
         ledger = try container.decode(SurfaceWaterLedger.self, forKey: .ledger)
+        if decodedVersion == 1 {
+            let excavated = cells.reduce(0) { $0 + max(0, $1.authoredGroundHeight - $1.groundHeight) }
+            materialLedger = SurfaceMaterialLedger(
+                initialGround: cells.reduce(0) { $0 + $1.groundHeight } + excavated,
+                excavated: excavated
+            )
+        } else {
+            // No default is permitted for current snapshots.
+            materialLedger = try container.decode(SurfaceMaterialLedger.self, forKey: .materialLedger)
+        }
         lastEdgeTransfers = try container.decodeIfPresent(
             [SurfaceEdgeTransfer].self,
             forKey: .lastEdgeTransfers
         ) ?? []
         try validateCompleteInvariant()
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(schemaVersion, forKey: .schemaVersion)
+        try container.encode(compatibilityID, forKey: .compatibilityID)
+        try container.encode(width, forKey: .width)
+        try container.encode(height, forKey: .height)
+        try container.encode(tick, forKey: .tick)
+        try container.encode(cells, forKey: .cells)
+        try container.encode(source, forKey: .source)
+        try container.encode(outlet, forKey: .outlet)
+        try container.encode(sourceWaterPerTick, forKey: .sourceWaterPerTick)
+        try container.encode(sourceDepthCap, forKey: .sourceDepthCap)
+        try container.encode(ledger, forKey: .ledger)
+        try container.encode(materialLedger, forKey: .materialLedger)
+        try container.encode(lastEdgeTransfers, forKey: .lastEdgeTransfers)
     }
 
     public init(
@@ -154,6 +242,7 @@ public struct SurfaceWorld: Codable, Equatable, Sendable {
         sourceDepthCap: Double,
         tick: UInt64 = 0,
         ledger: SurfaceWaterLedger? = nil,
+        materialLedger: SurfaceMaterialLedger? = nil,
         lastEdgeTransfers: [SurfaceEdgeTransfer] = []
     ) throws {
         self.schemaVersion = Self.schemaVersion
@@ -169,13 +258,34 @@ public struct SurfaceWorld: Codable, Equatable, Sendable {
         self.ledger = ledger ?? SurfaceWaterLedger(
             initialWater: cells.reduce(0) { $0 + $1.waterDepth }
         )
+        self.materialLedger = materialLedger ?? SurfaceMaterialLedger(
+            initialGround: cells.reduce(0) { $0 + $1.groundHeight + $1.sediment }
+        )
         self.lastEdgeTransfers = lastEdgeTransfers
+        self.originalSchemaVersion = Self.schemaVersion
+        self.originalCompatibilityID = Self.compatibilityID
         try validateCompleteInvariant()
     }
 
     public var totalWater: Double { cells.reduce(0) { $0 + $1.waterDepth } }
     public var expectedWater: Double { ledger.initialWater + ledger.waterIn - ledger.waterOut }
     public var waterResidual: Double { totalWater - expectedWater }
+    public var totalCarriedSediment: Double { cells.reduce(0) { $0 + $1.sediment } }
+    public var totalGroundMaterial: Double { cells.reduce(0) { $0 + $1.groundHeight } }
+    public var accountedMaterial: Double {
+        totalGroundMaterial + totalCarriedSediment + materialLedger.exported + materialLedger.excavated
+    }
+    public var materialResidual: Double { accountedMaterial - materialLedger.initialGround }
+    public var safeGlobalCutFloor: Double {
+        (cells.map(\.authoredGroundHeight).min() ?? 0) - Self.maximumExcavationDepth
+    }
+
+    /// Captures the immutable floor used by an entire pointer gesture.
+    public func cutFloor(startingAt coordinate: SurfaceCoordinate) throws -> Double {
+        guard let index = index(of: coordinate) else { throw SurfaceWorldError.invalidCell(coordinate) }
+        guard isSafeToDig(coordinate) else { throw SurfaceWorldError.unsafeToDig(coordinate) }
+        return max(safeGlobalCutFloor, cells[index].groundHeight - Self.excavationIncrement)
+    }
 
     public func index(of coordinate: SurfaceCoordinate) -> Int? {
         guard (0..<width).contains(coordinate.column),
@@ -256,6 +366,21 @@ public struct SurfaceWorld: Codable, Equatable, Sendable {
         let remaining = Self.maximumExcavationDepth - cells[index].excavationDepth
         let removed = min(amount, max(0, remaining))
         cells[index].groundHeight -= removed
+        materialLedger.excavated += removed
+        return removed
+    }
+
+    /// Cut-only operation. A low cell encountered later in a stroke is never raised.
+    @discardableResult
+    public mutating func excavate(_ coordinate: SurfaceCoordinate, toFloor floor: Double) throws -> Double {
+        guard floor.isFinite, floor >= safeGlobalCutFloor - 1e-12 else {
+            throw SurfaceWorldError.invalidAmount
+        }
+        guard let index = index(of: coordinate) else { throw SurfaceWorldError.invalidCell(coordinate) }
+        guard isSafeToDig(coordinate) else { throw SurfaceWorldError.unsafeToDig(coordinate) }
+        let removed = max(0, cells[index].groundHeight - floor)
+        cells[index].groundHeight -= removed
+        materialLedger.excavated += removed
         return removed
     }
 
@@ -284,6 +409,7 @@ public struct SurfaceWorld: Codable, Equatable, Sendable {
         ledger.waterIn = nextWaterIn
 
         let preWater = cells.map(\.waterDepth)
+        let preSediment = cells.map(\.sediment)
         let surfaces = cells.map(\.surfaceHeight)
         var proposals = Array(repeating: [(target: Int, amount: Double, dx: Double, dy: Double)](), count: cells.count)
 
@@ -303,6 +429,9 @@ public struct SurfaceWorld: Codable, Equatable, Sendable {
         var delta = Array(repeating: 0.0, count: cells.count)
         var flowX = Array(repeating: 0.0, count: cells.count)
         var flowY = Array(repeating: 0.0, count: cells.count)
+        var sedimentDelta = Array(repeating: 0.0, count: cells.count)
+        var outgoingWater = Array(repeating: 0.0, count: cells.count)
+        var downhillWork = Array(repeating: 0.0, count: cells.count)
         var completedTransfers: [SurfaceEdgeTransfer] = []
         completedTransfers.reserveCapacity(cells.count * 2)
         for sourceIndex in cells.indices {
@@ -321,6 +450,19 @@ public struct SurfaceWorld: Codable, Equatable, Sendable {
                 flowY[sourceIndex] += proposal.dy * amount
                 flowX[proposal.target] += proposal.dx * amount
                 flowY[proposal.target] += proposal.dy * amount
+                outgoingWater[sourceIndex] += amount
+                downhillWork[sourceIndex] += amount * max(
+                    0,
+                    surfaces[sourceIndex] - surfaces[proposal.target]
+                )
+                // Snapshot-synchronous donor transfer: every edge takes the same
+                // pre-tick concentration; donors cannot be overdrawn because water's
+                // aggregate transfer is already capped below its available amount.
+                let carried = preWater[sourceIndex] > 0
+                    ? preSediment[sourceIndex] * amount / preWater[sourceIndex]
+                    : 0
+                sedimentDelta[sourceIndex] -= carried
+                sedimentDelta[proposal.target] += carried
                 completedTransfers.append(SurfaceEdgeTransfer(
                     from: coordinate(for: sourceIndex)!,
                     to: coordinate(for: proposal.target)!,
@@ -331,16 +473,51 @@ public struct SurfaceWorld: Codable, Equatable, Sendable {
 
         for index in cells.indices {
             cells[index].waterDepth = max(0, cells[index].waterDepth + delta[index])
+            cells[index].sediment = max(0, cells[index].sediment + sedimentDelta[index])
             cells[index].flowX = flowX[index]
             cells[index].flowY = flowY[index]
         }
 
-        // The outlet is a real participating cell above. Drain only after incoming
-        // cardinal transfers have arrived, so it can visibly wet and pass water out.
+        // Export from the post-advection mixture before any local bed exchange.
+        // A fully drained outlet therefore exports all suspended sediment instead
+        // of depositing some material that has already physically left the world.
         let outletIndex = index(of: outlet)!
-        let drained = min(cells[outletIndex].waterDepth, 0.042)
+        let outletWaterBeforeDrain = cells[outletIndex].waterDepth
+        let drained = min(outletWaterBeforeDrain, 0.042)
+        let exportedSediment = outletWaterBeforeDrain > 0
+            ? cells[outletIndex].sediment * drained / outletWaterBeforeDrain
+            : 0
         cells[outletIndex].waterDepth -= drained
+        cells[outletIndex].sediment -= exportedSediment
         ledger.waterOut += drained
+        materialLedger.exported += exportedSediment
+
+        // This deliberately simple game-scale capacity proxy is driven only by
+        // measured water flux and downhill work. Bounds keep terrain feedback stable.
+        for index in cells.indices {
+            let capacity = outgoingWater[index] * 0.055 + downhillWork[index] * 0.22
+            if capacity > cells[index].sediment, outgoingWater[index] > 0.000_001 {
+                let erosionFloor = safeGlobalCutFloor
+                let availableBed = max(0, cells[index].groundHeight - erosionFloor)
+                let eroded = min(
+                    Self.erosionPerTickLimit,
+                    availableBed,
+                    (capacity - cells[index].sediment) * 0.16
+                )
+                cells[index].groundHeight -= eroded
+                cells[index].sediment += eroded
+            } else if cells[index].sediment > capacity {
+                let bedCeiling = cells[index].authoredGroundHeight + Self.maximumBedRise
+                let availableRoom = max(0, bedCeiling - cells[index].groundHeight)
+                let deposited = min(
+                    Self.depositionPerTickLimit,
+                    availableRoom,
+                    (cells[index].sediment - capacity) * 0.20
+                )
+                cells[index].groundHeight += deposited
+                cells[index].sediment -= deposited
+            }
+        }
         lastEdgeTransfers = completedTransfers
         tick += 1
         return true
@@ -385,13 +562,15 @@ public struct SurfaceWorld: Codable, Equatable, Sendable {
             throw SurfaceWorldError.invalidBoundary
         }
         guard cells.allSatisfy({ cell in
-            let excavation = cell.authoredGroundHeight - cell.groundHeight
+            let displacement = cell.groundHeight - cell.authoredGroundHeight
             let surface = cell.groundHeight + cell.waterDepth
             return cell.groundHeight.isFinite && cell.authoredGroundHeight.isFinite
                 && cell.waterDepth.isFinite && cell.waterDepth >= 0
                 && cell.flowX.isFinite && cell.flowY.isFinite
-                && excavation.isFinite && excavation >= -1e-12
-                && excavation <= Self.maximumExcavationDepth + 1e-12
+                && cell.sediment.isFinite && cell.sediment >= 0
+                && displacement.isFinite
+                && cell.groundHeight >= safeGlobalCutFloor - 1e-12
+                && displacement <= Self.maximumBedRise + 1e-12
                 && surface.isFinite
         }) else { throw SurfaceWorldError.invalidState }
 
@@ -406,6 +585,11 @@ public struct SurfaceWorld: Codable, Equatable, Sendable {
               expected.isFinite, expected >= -1e-12,
               actual.isFinite,
               abs(actual - expected) <= 1e-8 * max(1, expected),
+              materialLedger.initialGround.isFinite,
+              materialLedger.excavated.isFinite, materialLedger.excavated >= 0,
+              materialLedger.exported.isFinite, materialLedger.exported >= 0,
+              accountedMaterial.isFinite,
+              abs(materialResidual) <= 1e-8 * max(1, materialLedger.initialGround),
               lastEdgeTransfers.allSatisfy({ transfer in
                   guard transfer.amount.isFinite, transfer.amount >= 0,
                         index(of: transfer.from) != nil,
@@ -470,11 +654,22 @@ public enum DiggingExperimentTerrain {
             sourceDepthCap: 0.22
         )
         settlingWorld.step(count: settlingTicks)
-        // Present a flowing creek as tick zero while preserving exact conservation.
+        // Present a flowing creek as tick zero. Settling establishes the natural
+        // starting bed; rebasing authored ground means only subsequent player/live
+        // changes count as visible intervention while carried material is retained.
+        let rebasedCells = settlingWorld.cells.map { cell in
+            SurfaceCell(
+                groundHeight: cell.groundHeight,
+                waterDepth: cell.waterDepth,
+                flowX: cell.flowX,
+                flowY: cell.flowY,
+                sediment: cell.sediment
+            )
+        }
         return try! SurfaceWorld(
             width: width,
             height: height,
-            cells: settlingWorld.cells,
+            cells: rebasedCells,
             source: source,
             outlet: outlet,
             sourceWaterPerTick: 0.036,

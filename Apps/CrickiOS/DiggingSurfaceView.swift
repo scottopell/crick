@@ -60,6 +60,11 @@ struct SurfaceMapLayout: Equatable {
 struct DiggingBrushState: Equatable {
     private(set) var touched: Set<SurfaceCoordinate> = []
     var previousCoordinate: SurfaceCoordinate?
+    private(set) var capturedFloor: Double?
+
+    mutating func captureFloor(_ floor: Double) {
+        if capturedFloor == nil { capturedFloor = floor }
+    }
 
     mutating func takeFresh(_ coordinates: [SurfaceCoordinate]) -> [SurfaceCoordinate] {
         coordinates.filter { touched.insert($0).inserted }
@@ -68,6 +73,7 @@ struct DiggingBrushState: Equatable {
     mutating func reset() {
         touched.removeAll(keepingCapacity: true)
         previousCoordinate = nil
+        capturedFloor = nil
     }
 }
 
@@ -77,7 +83,7 @@ struct DiggingSurfaceView: View {
     let reduceMotion: Bool
     let interactionEnabled: Bool
     let accessibilitySummary: String
-    let onDigCells: ([SurfaceCoordinate]) -> Void
+    let onDigCells: ([SurfaceCoordinate], Double) -> Void
     let onGestureEnded: () -> Void
 
     @State private var brush = DiggingBrushState()
@@ -135,6 +141,15 @@ struct DiggingSurfaceView: View {
                 blue: baseBlue * (1 - exposure) + 0.075 * exposure
             )
             context.fill(Path(rect.insetBy(dx: 0.08, dy: 0.08)), with: .color(color))
+
+            // Warm bed tint is proportional to authoritative current net bed rise.
+            if cell.netBedRise > 0.000_001 {
+                let deposited = min(1, cell.netBedRise / SurfaceWorld.maximumBedRise)
+                context.fill(
+                    Path(rect.insetBy(dx: 0.4, dy: 0.4)),
+                    with: .color(Color(red: 0.76, green: 0.48, blue: 0.18).opacity(0.18 + deposited * 0.58))
+                )
+            }
 
             // Stable gravel flecks retain a creek-bed reading without procedural randomness.
             if (index * 13 + coordinate.row) % 5 == 0 {
@@ -222,6 +237,14 @@ struct DiggingSurfaceView: View {
                 Path(roundedRect: wetRect, cornerRadius: min(wetRect.width, wetRect.height) * 0.34),
                 with: .color(Color(red: 0.055, green: 0.48 + depth * 0.14, blue: 0.65 + depth * 0.18).opacity(0.58 + depth * 0.38))
             )
+            // Suspended sediment visibly clouds only the water that actually carries it.
+            let concentration = min(1, cell.sediment / max(0.000_5, cell.waterDepth * 0.08))
+            if concentration > 0.001 {
+                context.fill(
+                    Path(roundedRect: wetRect, cornerRadius: min(wetRect.width, wetRect.height) * 0.34),
+                    with: .color(Color(red: 0.72, green: 0.43, blue: 0.15).opacity(0.12 + concentration * 0.46))
+                )
+            }
 
             let magnitude = hypot(cell.flowX, cell.flowY)
             // Sparse deterministic sampling keeps the actual vector direction legible.
@@ -301,7 +324,11 @@ struct DiggingSurfaceView: View {
                 guard interactionEnabled,
                       let coordinate = layout.coordinate(at: value.location),
                       world.isSafeToDig(coordinate) else { return }
-                if brush.touched.isEmpty { visibleStroke.removeAll(keepingCapacity: true) }
+                if brush.touched.isEmpty {
+                    visibleStroke.removeAll(keepingCapacity: true)
+                    guard let floor = try? world.cutFloor(startingAt: coordinate) else { return }
+                    brush.captureFloor(floor)
+                }
                 let candidates: [SurfaceCoordinate]
                 if let previousCoordinate = brush.previousCoordinate {
                     candidates = interpolated(from: previousCoordinate, to: coordinate)
@@ -309,9 +336,9 @@ struct DiggingSurfaceView: View {
                     candidates = [coordinate]
                 }
                 let fresh = brush.takeFresh(candidates)
-                if !fresh.isEmpty {
+                if !fresh.isEmpty, let floor = brush.capturedFloor {
                     visibleStroke.append(contentsOf: fresh)
-                    onDigCells(fresh)
+                    onDigCells(fresh, floor)
                 }
                 brush.previousCoordinate = coordinate
             }

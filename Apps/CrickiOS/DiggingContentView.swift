@@ -1,12 +1,34 @@
 import CreekCore
 import SwiftUI
 
+struct LiveClockState: Equatable {
+    private(set) var isHoldingTwoX = false
+
+    mutating func setHoldingTwoX(_ holding: Bool) {
+        isHoldingTwoX = holding
+    }
+
+    /// Returns fixed physical steps for one scheduler pulse. Ineligible pulses do
+    /// no work and cancel transient hold state; elapsed time is never an input.
+    mutating func stepsForPulse(isEligible: Bool) -> Int {
+        guard isEligible else {
+            isHoldingTwoX = false
+            return 0
+        }
+        return isHoldingTwoX ? 2 : 1
+    }
+
+    mutating func stop() {
+        isHoldingTwoX = false
+    }
+}
+
 struct DiggingContentView: View {
     @State private var session: DiggingSession
     @State private var displayedWorld: SurfaceWorld
-    @State private var playbackTask: Task<Void, Never>?
-    @State private var playbackID = UUID()
-    @State private var isPlaying = false
+    @State private var liveTask: Task<Void, Never>?
+    @State private var liveClock = LiveClockState()
+    @State private var showMenu = false
     @State private var showLegacy = false
     @State private var showAccessibilityDigging = false
     @State private var errorMessage: String?
@@ -31,7 +53,7 @@ struct DiggingContentView: View {
                     selectedCoordinate: showAccessibilityDigging
                         ? session.selectedCoordinate : nil,
                     reduceMotion: reduceMotion,
-                    interactionEnabled: !isPlaying && scenePhase == .active,
+                    interactionEnabled: scenePhase == .active && !showLegacy && !showMenu,
                     accessibilitySummary: session.sceneSummary,
                     onDigCells: dig,
                     onGestureEnded: flowAfterDig
@@ -44,6 +66,27 @@ struct DiggingContentView: View {
         .sheet(isPresented: $showLegacy) {
             ContentView(session: legacySession)
         }
+        .confirmationDialog("Creek menu", isPresented: $showMenu, titleVisibility: .visible) {
+            Button("Save this creek") {
+                do { try session.save() } catch { errorMessage = "This creek could not be saved." }
+            }
+            .accessibilityIdentifier("save-digging")
+            Button("Resume saved creek") {
+                do {
+                    try session.resume()
+                    displayedWorld = session.world
+                } catch { errorMessage = "The separate digging snapshot is missing or damaged." }
+            }
+            .accessibilityIdentifier("resume-digging")
+            Button("Reset fresh creek", role: .destructive) {
+                session.reset()
+                displayedWorld = session.world
+            }
+            .accessibilityIdentifier("reset-digging")
+            Button("Open legacy Shape the Bend") { showLegacy = true }
+            .accessibilityIdentifier("open-legacy")
+            Button("Cancel", role: .cancel) {}
+        }
         .alert("Creek moment unavailable", isPresented: Binding(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }
@@ -52,13 +95,24 @@ struct DiggingContentView: View {
         } message: {
             Text(errorMessage ?? "")
         }
+        .task { startLiveIfNeeded() }
         .onChange(of: scenePhase) { _, phase in
-            if phase != .active {
-                settlePlayback()
+            if phase == .active {
+                startLiveIfNeeded()
+            } else {
+                stopLive()
                 try? session.save()
             }
         }
-        .onDisappear { settlePlayback() }
+        .onChange(of: showLegacy) { _, shown in
+            if shown { stopLive() } else { startLiveIfNeeded() }
+        }
+        // This transition is the sole owner of menu pause/resume. Dialog actions
+        // only mutate model state; dismissal consistently restarts the guarded clock.
+        .onChange(of: showMenu) { _, shown in
+            if shown { stopLive() } else { startLiveIfNeeded() }
+        }
+        .onDisappear { stopLive() }
     }
 
     private var header: some View {
@@ -70,41 +124,15 @@ struct DiggingContentView: View {
                     .foregroundStyle(.mint)
                 Text("Make your own way for water")
                     .font(.title3.weight(.semibold))
-                Text(isPlaying ? "Watching captured fixed ticks…" : session.message)
+                Text(liveClock.isHoldingTwoX ? "Creek running · 2× held" : session.message)
                     .font(.caption)
                     .foregroundStyle(.white.opacity(0.68))
                     .lineLimit(1)
                     .accessibilityIdentifier("digging-status")
             }
             Spacer(minLength: 4)
-            Menu {
-                Button("Save this creek", systemImage: "square.and.arrow.down") {
-                    do { try session.save() } catch { errorMessage = "This creek could not be saved." }
-                }
-                .accessibilityIdentifier("save-digging")
-                Button("Resume saved creek", systemImage: "arrow.counterclockwise") {
-                    settlePlayback()
-                    do {
-                        try session.resume()
-                        displayedWorld = session.world
-                    } catch {
-                        errorMessage = "The separate digging snapshot is missing or damaged."
-                    }
-                }
-                .disabled(!session.canResume)
-                .accessibilityIdentifier("resume-digging")
-                Divider()
-                Button("Reset fresh creek", systemImage: "arrow.triangle.2.circlepath", role: .destructive) {
-                    settlePlayback()
-                    session.reset()
-                    displayedWorld = session.world
-                }
-                .accessibilityIdentifier("reset-digging")
-                Button("Open legacy Shape the Bend", systemImage: "clock.arrow.circlepath") {
-                    settlePlayback()
-                    showLegacy = true
-                }
-                .accessibilityIdentifier("open-legacy")
+            Button {
+                showMenu = true
             } label: {
                 Image(systemName: "ellipsis.circle.fill")
                     .font(.title2)
@@ -140,7 +168,7 @@ struct DiggingContentView: View {
                 HStack(spacing: 9) { primaryControls }
                 VStack(spacing: 7) { primaryControls }
             }
-            Text("Drag once to lower each touched patch. Repeat a stroke to dig deeper.")
+            Text("A stroke cuts to one captured layer. Hold 2× to watch the same creek steps faster.")
                 .font(.caption2)
                 .foregroundStyle(.white.opacity(0.58))
                 .multilineTextAlignment(.center)
@@ -153,22 +181,19 @@ struct DiggingContentView: View {
 
     @ViewBuilder
     private var primaryControls: some View {
-        Button {
-            if isPlaying {
-                settlePlayback()
-            } else {
-                play(session.advanceCaptured())
-            }
-        } label: {
-            Label(
-                isPlaying ? "Skip animation" : "Let water flow",
-                systemImage: isPlaying ? "forward.end.fill" : "play.fill"
-            )
+        Label(liveClock.isHoldingTwoX ? "2× flowing" : "Hold for 2×", systemImage: "forward.fill")
             .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(.borderedProminent)
-        .tint(isPlaying ? .orange.opacity(0.82) : .cyan.opacity(0.76))
-        .accessibilityIdentifier(isPlaying ? "skip-water-animation" : "let-water-flow")
+            .padding(.vertical, 7)
+            .background(.cyan.opacity(liveClock.isHoldingTwoX ? 0.72 : 0.34), in: Capsule())
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in liveClock.setHoldingTwoX(true) }
+                    .onEnded { _ in liveClock.setHoldingTwoX(false) }
+            )
+            .accessibilityAddTraits(.isButton)
+            .accessibilityLabel("Hold for twice speed")
+            .accessibilityIdentifier("hold-two-x")
 
         Button {
             showAccessibilityDigging.toggle()
@@ -179,7 +204,7 @@ struct DiggingContentView: View {
         .buttonStyle(.bordered)
         .accessibilityLabel(showAccessibilityDigging ? "Hide selected cell controls" : "Show selected cell controls")
         .accessibilityIdentifier("selected-cell-controls")
-        .disabled(isPlaying)
+        .disabled(scenePhase != .active)
     }
 
     private var accessibilityDigControls: some View {
@@ -214,7 +239,7 @@ struct DiggingContentView: View {
 
     private var digSelectedButton: some View {
         Button("Dig selected cell") {
-            play(session.excavateSelected())
+            if session.excavateSelected() { displayedWorld = session.world }
         }
         .buttonStyle(.borderedProminent)
         .tint(.brown.opacity(0.9))
@@ -240,46 +265,35 @@ struct DiggingContentView: View {
         displayedWorld.cells.count(where: { $0.excavationDepth > 0.000_001 })
     }
 
-    private func dig(_ coordinates: [SurfaceCoordinate]) {
-        guard session.excavate(coordinates) else { return }
+    private func dig(_ coordinates: [SurfaceCoordinate], floor: Double) {
+        guard session.excavate(coordinates, toFloor: floor) else { return }
         displayedWorld = session.world
     }
 
     private func flowAfterDig() {
-        play(session.advanceCaptured(count: DiggingSession.automaticTicks))
+        // Live authority is already running; gesture end commits no hidden batch.
     }
 
-    /// Authority advances synchronously above. This task only reveals immutable
-    /// captured fixed-tick states; sleep duration is never a simulation input.
-    private func play(_ frames: [SurfaceWorld]) {
-        guard !frames.isEmpty else { return }
-        playbackTask?.cancel()
-        let id = UUID()
-        playbackID = id
-        isPlaying = true
-        if reduceMotion {
-            displayedWorld = frames[frames.count - 1]
-            isPlaying = false
-            return
-        }
-        playbackTask = Task { @MainActor in
-            for frame in frames {
-                guard !Task.isCancelled, playbackID == id else { return }
-                displayedWorld = frame
-                try? await Task.sleep(for: .milliseconds(58))
+    /// A clock pulse commits at most two identical physical fixed steps. Sleep is
+    /// presentation pacing only; elapsed inactive time is never converted to work.
+    private func startLiveIfNeeded() {
+        guard liveTask == nil, scenePhase == .active, !showLegacy, !showMenu else { return }
+        liveTask = Task { @MainActor in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .milliseconds(110))
+                let eligible = !Task.isCancelled && scenePhase == .active && !showLegacy && !showMenu
+                let steps = liveClock.stepsForPulse(isEligible: eligible)
+                guard steps > 0 else { continue }
+                _ = session.advanceLive(steps: steps)
+                displayedWorld = session.world
             }
-            guard !Task.isCancelled, playbackID == id else { return }
-            displayedWorld = session.world
-            isPlaying = false
-            playbackTask = nil
         }
     }
 
-    private func settlePlayback() {
-        playbackID = UUID()
-        playbackTask?.cancel()
-        playbackTask = nil
+    private func stopLive() {
+        liveClock.stop()
+        liveTask?.cancel()
+        liveTask = nil
         displayedWorld = session.world
-        isPlaying = false
     }
 }

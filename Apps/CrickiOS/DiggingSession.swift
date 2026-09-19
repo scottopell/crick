@@ -13,10 +13,105 @@ struct DiggingSnapshotEnvelope: Codable, Equatable {
         kind = "digging-surface"
         self.world = world
     }
+
+    /// Restores both current and explicitly supported migrated snapshots through
+    /// the same compatibility gate used by Save/Resume and debug-state replay.
+    func restoredWorld() throws -> SurfaceWorld {
+        guard kind == "digging-surface" else {
+            throw DiggingSessionError.unsupportedSnapshot
+        }
+        switch (schemaVersion, world.originalSchemaVersion, world.originalCompatibilityID) {
+        case (1, 1, SurfaceWorld.legacyCompatibilityID),
+             (Self.schemaVersion, SurfaceWorld.schemaVersion, SurfaceWorld.compatibilityID):
+            return try world.validated()
+        default:
+            throw DiggingSessionError.unsupportedSnapshot
+        }
+    }
+}
+
+struct DiggingDebugStateEnvelope: Codable, Equatable {
+    static let formatIdentifier = "com.scottopell.crick.debug-state"
+    static let formatVersion = 1
+
+    struct Provenance: Codable, Equatable {
+        let appVersion: String
+        let buildNumber: String
+        let worldCompatibilityID: String
+    }
+
+    let formatIdentifier: String
+    let formatVersion: Int
+    let provenance: Provenance
+    let selectedCell: SurfaceCoordinate
+    let snapshot: DiggingSnapshotEnvelope
+
+    init(world: SurfaceWorld, selectedCell: SurfaceCoordinate, appVersion: String, buildNumber: String) {
+        formatIdentifier = Self.formatIdentifier
+        formatVersion = Self.formatVersion
+        provenance = Provenance(
+            appVersion: appVersion,
+            buildNumber: buildNumber,
+            worldCompatibilityID: world.compatibilityID
+        )
+        self.selectedCell = selectedCell
+        snapshot = DiggingSnapshotEnvelope(world: world)
+    }
+
+    func restoredWorld() throws -> SurfaceWorld {
+        guard formatIdentifier == Self.formatIdentifier,
+              formatVersion == Self.formatVersion,
+              !provenance.appVersion.isEmpty,
+              !provenance.buildNumber.isEmpty,
+              provenance.appVersion.utf8.count <= DiggingDebugStateCodec.maximumMetadataByteCount,
+              provenance.buildNumber.utf8.count <= DiggingDebugStateCodec.maximumMetadataByteCount,
+              provenance.worldCompatibilityID == snapshot.world.compatibilityID,
+              snapshot.world.index(of: selectedCell) != nil else {
+            throw DiggingSessionError.unsupportedDebugState
+        }
+        return try snapshot.restoredWorld()
+    }
+}
+
+enum DiggingJSONCodec {
+    static func encode<T: Encodable>(_ value: T, prettyPrinted: Bool = false) throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = prettyPrinted ? [.prettyPrinted, .sortedKeys] : [.sortedKeys]
+        return try encoder.encode(value)
+    }
+}
+
+enum DiggingDebugStateCodec {
+    static let maximumByteCount = 1_000_000
+    static let maximumMetadataByteCount = 128
+
+    static func encode(_ envelope: DiggingDebugStateEnvelope) throws -> Data {
+        let data = try DiggingJSONCodec.encode(envelope)
+        guard data.count <= maximumByteCount else {
+            throw DiggingSessionError.unsupportedDebugState
+        }
+        // Serialization is also the canonical migration boundary: a validated v1
+        // world writes the current schema. Validate the exact bytes users receive,
+        // rather than stale original-schema provenance retained only in memory.
+        _ = try decode(data)
+        return data
+    }
+
+    /// Developer replay entry point. It accepts only bounded, version-compatible
+    /// plain JSON and validates the nested save envelope before returning it.
+    static func decode(_ data: Data) throws -> DiggingDebugStateEnvelope {
+        guard data.count <= maximumByteCount else {
+            throw DiggingSessionError.unsupportedDebugState
+        }
+        let envelope = try JSONDecoder().decode(DiggingDebugStateEnvelope.self, from: data)
+        _ = try envelope.restoredWorld()
+        return envelope
+    }
 }
 
 enum DiggingSessionError: Error, Equatable {
     case unsupportedSnapshot
+    case unsupportedDebugState
 }
 
 @MainActor
@@ -170,10 +265,22 @@ final class DiggingSession {
         return "\(patchCount) dug \(patchCount == 1 ? "patch" : "patches") \(location), \(depth); water newly wet \(newlyWet.total) \(newlyWet.total == 1 ? "patch" : "patches"), including \(newlyWet.alongStroke) along the stroke.\(lipSummary)"
     }
 
+    /// Produces portable compact JSON without changing authority, presentation,
+    /// tick, or the user's save file. Bundle metadata can be injected by tests.
+    func debugStateData(
+        appVersion: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown",
+        buildNumber: String = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown"
+    ) throws -> Data {
+        try DiggingDebugStateCodec.encode(DiggingDebugStateEnvelope(
+            world: world,
+            selectedCell: selectedCoordinate,
+            appVersion: appVersion,
+            buildNumber: buildNumber
+        ))
+    }
+
     func save() throws {
         let envelope = DiggingSnapshotEnvelope(world: world)
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         if let files = snapshotStore as? FileSnapshotStore, files.exists() {
             // Save owns preservation: launch/background saves can occur before Resume.
             // Inspect the bytes that are about to be replaced and preserve an exact,
@@ -187,7 +294,7 @@ final class DiggingSession {
                 }
             }
         }
-        try snapshotStore.save(try encoder.encode(envelope))
+        try snapshotStore.save(try DiggingJSONCodec.encode(envelope, prettyPrinted: true))
         canResume = true
         message = "Saved this digging creek"
     }
@@ -208,28 +315,10 @@ final class DiggingSession {
             DiggingSnapshotEnvelope.self,
             from: snapshotStore.load()
         )
-        guard envelope.kind == "digging-surface" else {
-            throw DiggingSessionError.unsupportedSnapshot
-        }
-        let originalPair = (
-            envelope.schemaVersion,
-            envelope.world.originalSchemaVersion,
-            envelope.world.originalCompatibilityID
-        )
-        let migratedLegacy: Bool
-        switch originalPair {
-        case (1, 1, SurfaceWorld.legacyCompatibilityID):
-            migratedLegacy = true
-        case (DiggingSnapshotEnvelope.schemaVersion, SurfaceWorld.schemaVersion, SurfaceWorld.compatibilityID):
-            migratedLegacy = false
-        default:
-            // Reject envelope/world hybrids before assigning a migrated world. This
-            // also prevents a forged v1 envelope from triggering backup behavior.
-            throw DiggingSessionError.unsupportedSnapshot
-        }
-        let restored = try envelope.world.validated()
+        // Reject envelope/world hybrids before assigning a migrated world. This
+        // also prevents a forged v1 envelope from triggering backup behavior.
+        let restored = try envelope.restoredWorld()
         world = restored
-        _ = migratedLegacy // Save independently inspects the file it will replace.
         selectedCoordinate = SurfaceCoordinate(
             column: min(world.width - 2, max(1, selectedCoordinate.column)),
             row: min(world.height - 2, max(1, selectedCoordinate.row))

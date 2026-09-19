@@ -1,5 +1,6 @@
 import CreekCore
 import SwiftUI
+import UIKit
 
 struct LiveClockState: Equatable {
     private(set) var isHoldingTwoX = false
@@ -32,6 +33,7 @@ struct DiggingContentView: View {
     @State private var showLegacy = false
     @State private var showAccessibilityDigging = false
     @State private var errorMessage: String?
+    @State private var debugCopyConfirmation: String?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
 
@@ -60,6 +62,17 @@ struct DiggingContentView: View {
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 controls
+                if let debugCopyConfirmation {
+                    Text(debugCopyConfirmation)
+                        .font(.caption.weight(.semibold).monospacedDigit())
+                        .foregroundStyle(.mint)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .frame(maxWidth: .infinity)
+                        .background(.black.opacity(0.7))
+                        .accessibilityLabel(debugCopyConfirmation)
+                        .accessibilityIdentifier("debug-state-copy-confirmation")
+                }
             }
         }
         .preferredColorScheme(.dark)
@@ -71,6 +84,8 @@ struct DiggingContentView: View {
                 do { try session.save() } catch { errorMessage = "This creek could not be saved." }
             }
             .accessibilityIdentifier("save-digging")
+            Button("Copy debug state") { copyDebugState() }
+                .accessibilityIdentifier("copy-debug-state")
             Button("Resume saved creek") {
                 do {
                     try session.resume()
@@ -272,6 +287,21 @@ struct DiggingContentView: View {
 
     private func flowAfterDig() {
         // Live authority is already running; gesture end commits no hidden batch.
+    }
+
+    private func copyDebugState() {
+        do {
+            let tick = session.world.tick
+            let data = try session.debugStateData()
+            guard let json = String(data: data, encoding: .utf8) else {
+                throw DiggingSessionError.unsupportedDebugState
+            }
+            UIPasteboard.general.string = json
+            debugCopyConfirmation = "Copied \(data.count) bytes · tick \(tick)"
+            UIAccessibility.post(notification: .announcement, argument: debugCopyConfirmation)
+        } catch {
+            errorMessage = "The debug state could not be copied."
+        }
     }
 
     /// A clock pulse commits at most two identical physical fixed steps. Sleep is

@@ -69,6 +69,14 @@ final class CrickiOSUITests: XCTestCase {
         }
 
         app.buttons["digging-menu"].tap()
+        let copyPaused = tickValue(app)
+        app.buttons["copy-debug-state"].tap()
+        let copied = app.staticTexts["debug-state-copy-confirmation"]
+        XCTAssertTrue(copied.waitForExistence(timeout: 2))
+        XCTAssertTrue(copied.label.contains("bytes · tick \(copyPaused)"))
+        assertTickResumes(in: app, after: copyPaused, message: "copy dismissal must resume ticking")
+
+        app.buttons["digging-menu"].tap()
         let savePaused = tickValue(app)
         app.buttons["save-digging"].tap()
         assertTickResumes(in: app, after: savePaused, message: "save dismissal must resume ticking")

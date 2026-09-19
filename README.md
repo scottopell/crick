@@ -56,11 +56,16 @@ The app projects actual cell ground height, water depth, and last-tick flux into
 - Backgrounding pauses and atomically saves. Foregrounding resumes from saved authority without converting elapsed inactive time into catch-up work.
 - A fixed tick has no calibrated real-world duration; scheduler sleeps only pace presentation and are not physics input.
 - **Save this creek**, **Resume saved creek**, and **Reset fresh creek** live in the Creek menu.
+- **Copy debug state** pauses with the existing Creek menu and copies compact, plain, versioned JSON. It contains the exact authoritative world (including tick, terrain/water/sediment, ledgers, and last transfers), selected cell, app version/build, and compatibility ID—no device or account data. The confirmation reports byte count and captured tick; copying neither advances the world nor writes the saved creek.
 - Digging persistence uses `digging-surface-v1.json` as its historical filename but writes typed envelope/world schema 2, separate from legacy `current.crick.json`. A validated schema-1 file migrates on read; the first write that would replace one preserves its exact bytes once as `digging-surface-v1.v1-backup.json`, including when launch/background saving occurs before Resume.
 - VoiceOver sees one dynamically described creek surface plus named controls. Its factual summary reports dug patch count/location and measured newly wet patches without claiming success. **Show selected cell controls** exposes bounded directional selection and **Dig selected cell** instead of hundreds of low-value cell elements; controls wrap at large text sizes.
 - Gesture state clears on end, cancellation/disappearance, and disable. If interrupted after excavation but before end, already lowered ground remains valid while no implicit flow batch is committed.
 
 `DiggingSession` and the retained `SimulationSession` are app adapters; `CreekCore` remains platform-neutral and performs no persistence or rendering I/O.
+
+### Exact debug-state replay
+
+For a report, open **Creek menu → Copy debug state** while the interesting state is visible, then paste the JSON into a text file. The JSON is human-portable and intentionally not Base64. Developer tests replay it with `DiggingDebugStateCodec.decode(Data(contentsOf: url))`, then call `restoredWorld()` on the decoded envelope; this uses the same nested `DiggingSnapshotEnvelope` compatibility/migration gate as Resume. There is intentionally no user-facing import command.
 
 ## Legacy Shape the Bend
 
@@ -68,9 +73,9 @@ The menu opens the prior SwiftUI/Metal experience as a sheet. Its six-cell one-d
 
 ## Build and release status
 
-The local app version is **0.1.0 (9)**. See [PLAYTEST_READINESS.md](PLAYTEST_READINESS.md) for the current exploratory phone check, exact verification matrix, durable artifact paths, and signing limitations.
+The local app version is **0.1.0 (10)**. See [PLAYTEST_READINESS.md](PLAYTEST_READINESS.md) for the current exploratory phone check, exact verification matrix, durable artifact paths, and signing limitations.
 
-No TestFlight, public upload, credential/profile creation, archive, or physical-device installation was performed for build 9. Historical build-7 signing/device evidence and current build-9 simulator-only evidence are separated in `PLAYTEST_READINESS.md`.
+No TestFlight, public upload, credential/profile creation, archive, or physical-device installation was performed for build 10. Historical build-7 signing/device evidence and simulator-only evidence are separated in `PLAYTEST_READINESS.md`.
 
 ## Known limitations
 

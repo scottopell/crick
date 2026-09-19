@@ -459,6 +459,81 @@ func saveWithoutResumePreservesLegacyBytes() throws {
     #expect(current.world.originalSchemaVersion == SurfaceWorld.schemaVersion)
 }
 
+@MainActor
+@Test("Debug export replays exact authority and metadata without ticking or overwriting save")
+func debugStateExactReadOnlyExport() throws {
+    let store = MemorySnapshotStore()
+    store.data = Data("untouched saved phone state".utf8)
+    let session = DiggingSession(snapshotStore: store)
+    let coordinate = SurfaceCoordinate(column: 7, row: 10)
+    #expect(session.excavate([coordinate]))
+    _ = session.advanceCaptured(count: 7)
+    session.moveSelection(columns: 3, rows: -2)
+
+    let worldBefore = session.world
+    let selectionBefore = session.selectedCoordinate
+    let saveBefore = store.data
+    let data = try session.debugStateData(appVersion: "0.1.0-test", buildNumber: "10-test")
+    let replay = try DiggingDebugStateCodec.decode(data)
+
+    #expect(replay.formatIdentifier == DiggingDebugStateEnvelope.formatIdentifier)
+    #expect(replay.formatVersion == DiggingDebugStateEnvelope.formatVersion)
+    #expect(replay.provenance.appVersion == "0.1.0-test")
+    #expect(replay.provenance.buildNumber == "10-test")
+    #expect(replay.provenance.worldCompatibilityID == SurfaceWorld.compatibilityID)
+    #expect(replay.selectedCell == selectionBefore)
+    #expect(replay.snapshot.schemaVersion == DiggingSnapshotEnvelope.schemaVersion)
+    #expect(try replay.restoredWorld() == worldBefore)
+    #expect(session.world == worldBefore)
+    #expect(session.world.tick == worldBefore.tick)
+    #expect(session.selectedCoordinate == selectionBefore)
+    #expect(store.data == saveBefore)
+    #expect(data.count <= DiggingDebugStateCodec.maximumByteCount)
+    #expect(!data.contains(0x0A), "clipboard JSON stays compact")
+}
+
+@MainActor
+@Test("Debug replay exports migrated authority in the current nested schema without altering legacy bytes")
+func debugStateMigratedReplay() throws {
+    let fixture = try #require(Bundle(for: MemorySnapshotStore.self).url(
+        forResource: "barrier-snapshot-tick-540",
+        withExtension: "json"
+    ))
+    let original = try Data(contentsOf: fixture)
+    let store = MemorySnapshotStore()
+    store.data = original
+    let session = DiggingSession(snapshotStore: store)
+    try session.resume()
+    let migratedAuthority = session.world
+
+    let data = try session.debugStateData(appVersion: "0.1.0", buildNumber: "10")
+    let replay = try DiggingDebugStateCodec.decode(data)
+    let json = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+    let snapshot = try #require(json["snapshot"] as? [String: Any])
+    let world = try #require(snapshot["world"] as? [String: Any])
+
+    #expect(snapshot["schemaVersion"] as? Int == DiggingSnapshotEnvelope.schemaVersion)
+    #expect(world["schemaVersion"] as? Int == SurfaceWorld.schemaVersion)
+    #expect(world["compatibilityID"] as? String == SurfaceWorld.compatibilityID)
+    // A migrated in-memory world retains its original schema provenance solely so
+    // the outer envelope can reject hybrids. Encoded authority is canonical v2;
+    // compare those exact bytes rather than that non-encoded provenance marker.
+    #expect(
+        try DiggingJSONCodec.encode(replay.snapshot)
+            == DiggingJSONCodec.encode(DiggingSnapshotEnvelope(world: migratedAuthority))
+    )
+    #expect(try replay.restoredWorld().tick == migratedAuthority.tick)
+    #expect(store.data == original)
+}
+
+@Test("Debug replay rejects input beyond its explicit bound")
+func debugStateInputBound() {
+    let oversized = Data(repeating: 0x20, count: DiggingDebugStateCodec.maximumByteCount + 1)
+    #expect(throws: DiggingSessionError.unsupportedDebugState) {
+        _ = try DiggingDebugStateCodec.decode(oversized)
+    }
+}
+
 @Test("Disabling an interrupted digging gesture resets transient brush state")
 func interruptedDiggingBrushReset() {
     var brush = DiggingBrushState()

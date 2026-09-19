@@ -10,15 +10,17 @@ The delivery-documentation commit carrying this section is an intentional new pu
 
 ---
 
-# Digging experiment exploratory readiness — 0.1.0 (9)
+# Digging experiment exploratory readiness — 0.1.0 (10)
 
-Updated 2026-09-18. This document replaces the stale build-8 candidate status; historical text remains in git.
+Updated 2026-09-18. Build 10 adds exact, read-only debug-state copying to the build-9 live-erosion baseline; historical text remains in git.
 
-Build 9 is a local, uncommitted live-erosion candidate only. The whole digging world runs continuously while active, couples water to bounded game-scale erosion, carried sediment, and deposition, and writes schema-2 authority. Its 2× control changes how many identical physical fixed steps each scheduler pulse commits; a tick has no calibrated real-world duration. Menus, legacy presentation, and lifecycle transitions pause the guarded clock and discard elapsed inactive time rather than catching up. No archive, cloud, upload, signing, provisioning, credential, or physical-device operation was performed for build 9; the installed-phone statement above remains about build 7 only.
+Build 10 is a local, uncommitted diagnostic candidate only. The whole digging world runs continuously while active, couples water to bounded game-scale erosion, carried sediment, and deposition, and writes schema-2 authority. Its 2× control changes how many identical physical fixed steps each scheduler pulse commits; a tick has no calibrated real-world duration. Menus, legacy presentation, and lifecycle transitions pause the guarded clock and discard elapsed inactive time rather than catching up. No archive, cloud, upload, signing, provisioning, credential, or physical-device operation was performed for build 10; the installed-phone statement above remains about build 7 only.
 
 ## What is ready
 
 The app launches into **Dig the Bend**, an unscored 20 × 26 surface-water experiment. The old **Shape the Bend** experience remains available from the Creek menu. The experiment is intended for personal exploratory evaluation, not cohort acceptance. Its normal delivery channel is the existing main-to-TestFlight workflow described above; the local development-signed build is only a temporary alternative.
+
+For an exact reproduction, leave the interesting creek visible, open **Creek menu → Copy debug state**, and paste the resulting plain JSON into the report. The copied tick is authoritative; the menu pauses simulation while capturing. The versioned `com.scottopell.crick.debug-state` envelope carries the complete nested save snapshot, selected cell, app version/build, and world compatibility ID, but no private device/account data. Copying does not save, overwrite, advance, or import anything. Developers replay a pasted file through `DiggingDebugStateCodec.decode` and `restoredWorld()`; no user import UI is present.
 
 Automated readiness requires all of the following from final current code:
 
@@ -27,9 +29,11 @@ Automated readiness requires all of the following from final current code:
 - native and UI suites pass on the specified iPhone 15 and iPhone SE simulators;
 - the digging UI test performs an actual surface drag (not the selected-cell fallback or menu), observes lowered cells, exercises physical hold/release 2×, repeats to deepen, verifies menu pause/restart without duplicate clocks, verifies save/reset/resume, and proves a measured inactive interval does no work;
 - the retained legacy UI journey enters through the Creek menu and still completes its miss/retry/success path;
-- the simulator Release artifact succeeds with build number 9;
+- the simulator Release artifact succeeds with local build number 10;
 - paired same-tick cut/control screenshots and measured JSON are exported outside the repository and inspected;
-- no archive, device build/install, upload, or product extension is part of this build-9 pass.
+- no archive, device build/install, upload, or product extension is part of this build-10 pass.
+
+Build-10 verification: Swift package Release tests **50/50**; native iOS Swift Testing cases **37/37** plus visual-proof XCTest cases **2/2** on iPhone 15 Pro (iOS 17.5) and iPhone 16 Pro (iOS 18.1); the modified clipboard UI journey **1/1** on each simulator; and the unsigned simulator Release build succeeded as 0.1.0 (10). Logs are under `/Users/scottopell/dev/crick-builds/debug-state-build10`. The unchanged legacy UI journey is covered by the historical full build-9 run below, not rerun in this bounded diagnostic pass.
 
 Final build-9 current-tree results: Swift package release tests **50/50**; native iOS tests **34/34** plus two visual-proof XCTest cases on both iPhone 15 and iPhone SE (3rd generation), both iOS 17.5; UI journeys **2/2** on each simulator; and the simulator Release build succeeded. The paired causal proof advances initially identical, sediment-free cut/control worlds to tick 1200 and records positive cut-minus-control downstream erosion, sediment flux, and deposition effects. This does not rename or attribute the control world's ordinary erosion to the cut. Exact logs, exported proof, and result bundle are under `/Users/scottopell/dev/crick-builds/live-erosion-build9-final`.
 

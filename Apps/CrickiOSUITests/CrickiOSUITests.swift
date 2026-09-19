@@ -21,8 +21,37 @@ final class CrickiOSUITests: XCTestCase {
         XCTAssertFalse(app.staticTexts["excavated-cell-count"].label.hasPrefix("0 "))
         let tickAfterStroke = tickValue(app)
         XCTAssertGreaterThan(tickAfterStroke, 0, "live world must keep advancing after the intervention")
-        let bedStatus = app.staticTexts["digging-status"].label
-        XCTAssertTrue(bedStatus.contains("current") || bedStatus.contains("live"))
+        let tool = app.segmentedControls["ground-tool"]
+        XCTAssertTrue(tool.waitForExistence(timeout: 2))
+        tool.buttons["Fill"].tap()
+        XCTAssertTrue(app.staticTexts["ground-tool-status"].label.contains("FILL"))
+        let fillEvidence = app.staticTexts["fill-evidence"]
+        XCTAssertTrue(fillEvidence.waitForExistence(timeout: 2))
+        let addedBefore = fillAddedValue(fillEvidence.label)
+        XCTAssertEqual(fillStrokeCount(fillEvidence.label), 0)
+        attachScreenshot(named: "Fill — before bank-to-wet stroke")
+        // Capture the higher inside bank and cross the visible wet bend. The first
+        // cell is a deliberate no-op; lower cells rise to that unchanged ground level.
+        let fillStart = surface.coordinate(withNormalizedOffset: CGVector(dx: 0.76, dy: 0.42))
+        let fillEnd = surface.coordinate(withNormalizedOffset: CGVector(dx: 0.48, dy: 0.56))
+        fillStart.press(forDuration: 0.15, thenDragTo: fillEnd)
+        XCTAssertTrue(app.staticTexts["ground-target"].waitForExistence(timeout: 2))
+        XCTAssertGreaterThan(fillAddedValue(fillEvidence.label), addedBefore,
+            "the real drag must increase authoritative external fill")
+        XCTAssertGreaterThan(fillStrokeCount(fillEvidence.label), 0,
+            "the real drag must actually raise cells")
+        XCTAssertGreaterThan(fillWetCount(fillEvidence.label), 0,
+            "the verified stroke must cross and raise a visibly wet cell")
+        attachScreenshot(named: "Fill — immediately after fixed-level wet stroke")
+        let tickImmediatelyAfterFill = tickValue(app)
+        Thread.sleep(forTimeInterval: 1.2)
+        XCTAssertGreaterThan(tickValue(app), tickImmediatelyAfterFill,
+            "ordinary water response must advance after submerged fill")
+        XCTAssertGreaterThan(fillAddedValue(fillEvidence.label), addedBefore,
+            "ordinary ticks must retain the authoritative external-fill accounting")
+        attachScreenshot(named: "Fill — after ordinary water response")
+        tool.buttons["Dig"].tap()
+        XCTAssertTrue(app.staticTexts["ground-tool-status"].label.contains("DIG"))
 
         let holdControl = app.buttons["hold-two-x"].firstMatch
         let heldStatus = app.staticTexts["digging-status"]
@@ -193,6 +222,22 @@ final class CrickiOSUITests: XCTestCase {
             .completed,
             "an open menu must own the live pause"
         )
+    }
+
+    private func fillStrokeCount(_ label: String) -> Int {
+        Int(label.split(separator: " ").first ?? "0") ?? 0
+    }
+
+    private func fillWetCount(_ label: String) -> Int {
+        let parts = label.split(separator: " ")
+        guard let wetIndex = parts.firstIndex(of: "wet"), wetIndex > parts.startIndex else { return 0 }
+        return Int(parts[parts.index(before: wetIndex)]) ?? 0
+    }
+
+    private func fillAddedValue(_ label: String) -> Double {
+        let parts = label.split(separator: " ")
+        guard let addedIndex = parts.firstIndex(of: "added"), addedIndex > parts.startIndex else { return 0 }
+        return Double(parts[parts.index(before: addedIndex)]) ?? 0
     }
 
     private func tickValue(_ app: XCUIApplication) -> Int {

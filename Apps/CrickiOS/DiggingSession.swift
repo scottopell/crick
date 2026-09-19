@@ -3,7 +3,7 @@ import Foundation
 import Observation
 
 struct DiggingSnapshotEnvelope: Codable, Equatable {
-    static let schemaVersion = 2
+    static let schemaVersion = 3
     let schemaVersion: Int
     let kind: String
     let world: SurfaceWorld
@@ -22,6 +22,7 @@ struct DiggingSnapshotEnvelope: Codable, Equatable {
         }
         switch (schemaVersion, world.originalSchemaVersion, world.originalCompatibilityID) {
         case (1, 1, SurfaceWorld.legacyCompatibilityID),
+             (2, 2, SurfaceWorld.previousCompatibilityID),
              (Self.schemaVersion, SurfaceWorld.schemaVersion, SurfaceWorld.compatibilityID):
             return try world.validated()
         default:
@@ -126,8 +127,23 @@ final class DiggingSession {
     private(set) var message = "Drag through gravel to dig"
     private(set) var sceneSummary = "No patches lowered yet. Water follows the authored bend."
     var selectedCoordinate = SurfaceCoordinate(column: 8, row: 10)
+    var editMode: SurfaceEditMode = .dig {
+        didSet {
+            guard editMode != oldValue else { return }
+            capturedAccessibilityFillTarget = nil
+            lastEditTarget = nil
+            message = editMode == .dig
+                ? "Dig mode — drag through gravel"
+                : "Fill mode — start on ground to capture its level"
+        }
+    }
+    private(set) var lastEditTarget: Double?
+    private(set) var capturedAccessibilityFillTarget: Double?
+    private(set) var lastFillChangedCellCount = 0
+    private(set) var lastFillWetCellCount = 0
     private var preDigWaterDepths: [Double]?
     private var pendingDugCoordinates: Set<SurfaceCoordinate> = []
+    private var pendingEditMode: SurfaceEditMode = .dig
     private var pendingObservationTicks = 0
 
     init(snapshotStore: any SnapshotStoring) {
@@ -140,42 +156,116 @@ final class DiggingSession {
         try? world.cutFloor(startingAt: coordinate)
     }
 
+    /// Begins one edit gesture. The target and physical baseline are captured once,
+    /// even when every destination in the gesture is a no-op.
+    @discardableResult
+    func beginEdit(at coordinate: SurfaceCoordinate, mode: SurfaceEditMode) -> Double? {
+        let target: Double?
+        switch mode {
+        case .dig: target = try? world.cutFloor(startingAt: coordinate)
+        case .fill: target = try? world.fillTarget(startingAt: coordinate)
+        }
+        guard let target else { return nil }
+        beginEdit(target: target, mode: mode)
+        return target
+    }
+
+    private func beginEdit(target: Double, mode: SurfaceEditMode) {
+        // A new gesture supersedes any unfinished observation. It must never merge
+        // dig and fill coordinates or report a response for the superseded edit.
+        preDigWaterDepths = world.cells.map(\.waterDepth)
+        pendingDugCoordinates.removeAll(keepingCapacity: true)
+        pendingObservationTicks = 0
+        pendingEditMode = mode
+        lastEditTarget = target
+        if mode == .fill {
+            lastFillChangedCellCount = 0
+            lastFillWetCellCount = 0
+        }
+    }
+
+    @discardableResult
+    func apply(
+        _ coordinates: [SurfaceCoordinate],
+        target: Double,
+        mode: SurfaceEditMode
+    ) -> Bool {
+        var changed = false
+        for coordinate in coordinates {
+            let wasWet = world.index(of: coordinate).map { world.cells[$0].waterDepth > 0.004 } ?? false
+            let delta: Double
+            switch mode {
+            case .dig:
+                delta = (try? world.excavate(coordinate, toFloor: target)) ?? 0
+            case .fill:
+                delta = (try? world.fill(coordinate, toGround: target)) ?? 0
+            }
+            if delta > 0 {
+                changed = true
+                selectedCoordinate = coordinate
+                pendingDugCoordinates.insert(coordinate)
+                if mode == .fill {
+                    lastFillChangedCellCount += 1
+                    if wasWet { lastFillWetCellCount += 1 }
+                }
+            }
+        }
+        guard changed else { return false }
+        message = mode == .dig
+            ? "Ground lowered to captured level"
+            : "Ground raised to captured level — water depth retained"
+        sceneSummary = diggingSummary(newlyWet: nil)
+        return true
+    }
+
     /// Compatibility convenience for discrete callers; pointer gestures must pass
     /// their independently captured floor through the overload below.
     @discardableResult
     func excavate(_ coordinates: [SurfaceCoordinate]) -> Bool {
         guard let first = coordinates.first,
-              let floor = cutFloor(startingAt: first) else { return false }
-        return excavate(coordinates, toFloor: floor)
+              let floor = beginEdit(at: first, mode: .dig) else { return false }
+        return apply(coordinates, target: floor, mode: .dig)
     }
 
     /// Pointer path: every update supplies the floor captured once at finger-down.
     @discardableResult
     func excavate(_ coordinates: [SurfaceCoordinate], toFloor floor: Double) -> Bool {
-        let beforeLatestDig = world.cells.map(\.waterDepth)
-        var changed = false
-        for coordinate in coordinates {
-            if (try? world.excavate(coordinate, toFloor: floor)) ?? 0 > 0 {
-                changed = true
-                selectedCoordinate = coordinate
-                pendingDugCoordinates.insert(coordinate)
-            }
-        }
-        if changed {
-            // Every successful intervention starts one fresh, bounded physical-time
-            // observation window. Scheduler speed changes pulse frequency, not this count.
-            preDigWaterDepths = beforeLatestDig
-            pendingObservationTicks = 0
-            message = "Ground lowered — current carries the loose bed"
-            sceneSummary = diggingSummary(newlyWet: nil)
-        }
-        return changed
+        beginEdit(target: floor, mode: .dig)
+        return apply(coordinates, target: floor, mode: .dig)
+    }
+
+    @discardableResult
+    func fill(_ coordinates: [SurfaceCoordinate], toGround target: Double) -> Bool {
+        beginEdit(target: target, mode: .fill)
+        return apply(coordinates, target: target, mode: .fill)
     }
 
     /// Separate VoiceOver equivalent: one intentional scoop at the selected cell.
     func excavateSelected() -> Bool {
         guard let floor = cutFloor(startingAt: selectedCoordinate) else { return false }
         return excavate([selectedCoordinate], toFloor: floor)
+    }
+
+    func captureSelectedFillTarget() -> Bool {
+        guard let target = beginEdit(at: selectedCoordinate, mode: .fill) else { return false }
+        capturedAccessibilityFillTarget = target
+        lastEditTarget = target
+        message = "Captured ground level at column \(selectedCoordinate.column + 1), row \(selectedCoordinate.row + 1)"
+        return true
+    }
+
+    func applySelectedEdit() -> Bool {
+        switch editMode {
+        case .dig:
+            return excavateSelected()
+        case .fill:
+            guard let target = capturedAccessibilityFillTarget else {
+                message = "Capture a ground level before filling the selected cell"
+                return false
+            }
+            beginEdit(target: target, mode: .fill)
+            return apply([selectedCoordinate], target: target, mode: .fill)
+        }
     }
 
     @discardableResult
@@ -211,7 +301,12 @@ final class DiggingSession {
         pendingDugCoordinates.removeAll(keepingCapacity: true)
         pendingObservationTicks = 0
         message = "Fresh gravel — drag to dig"
+        editMode = .dig
+        lastEditTarget = nil
+        capturedAccessibilityFillTarget = nil
         sceneSummary = "No patches lowered yet. Water follows the authored bend."
+        lastFillChangedCellCount = 0
+        lastFillWetCellCount = 0
     }
 
     func moveSelection(columns: Int, rows: Int) {
@@ -256,13 +351,16 @@ final class DiggingSession {
         let deepest = pendingDugCoordinates.compactMap(excavationDepth).max() ?? 0
         let increments = Int((deepest / SurfaceWorld.excavationIncrement).rounded())
         let depth = "up to \(increments) digging \(increments == 1 ? "increment" : "increments") deep"
+        let editDescription = pendingEditMode == .dig
+            ? "dug \(patchCount == 1 ? "patch" : "patches") \(location), \(depth)"
+            : "filled \(patchCount == 1 ? "patch" : "patches") to one captured ground level \(location)"
         guard let newlyWet else {
-            return "\(patchCount) dug \(patchCount == 1 ? "patch" : "patches") \(location), \(depth)."
+            return "\(patchCount) \(editDescription)."
         }
         let lipSummary = remainingWaterLips.map {
-            " \($0) local \($0 == 1 ? "lip remains" : "lips remain") where visible water meets higher dug ground (which may contain shallow water below the visual threshold)."
+            " \($0) local \($0 == 1 ? "lip remains" : "lips remain") where visible water meets higher edited ground (which may contain shallow water below the visual threshold)."
         } ?? ""
-        return "\(patchCount) dug \(patchCount == 1 ? "patch" : "patches") \(location), \(depth); water newly wet \(newlyWet.total) \(newlyWet.total == 1 ? "patch" : "patches"), including \(newlyWet.alongStroke) along the stroke.\(lipSummary)"
+        return "\(patchCount) \(editDescription); after \(pendingObservationTicks) ticks, water newly wet \(newlyWet.total) \(newlyWet.total == 1 ? "patch" : "patches"), including \(newlyWet.alongStroke) along the stroke.\(lipSummary)"
     }
 
     /// Produces portable compact JSON without changing authority, presentation,
@@ -287,8 +385,9 @@ final class DiggingSession {
             // validated v1 envelope once. Corrupt/non-v1 files retain normal explicit
             // save semantics but can never be mistaken for migration input.
             let existing = try files.load()
-            if Self.isLegacyV1Envelope(existing) {
-                let backup = files.url.deletingPathExtension().appendingPathExtension("v1-backup.json")
+            if let priorVersion = Self.priorEnvelopeVersion(existing) {
+                let backup = files.url.deletingPathExtension()
+                    .appendingPathExtension("v\(priorVersion)-backup.json")
                 if !FileManager.default.fileExists(atPath: backup.path) {
                     try existing.write(to: backup, options: .atomic)
                 }
@@ -299,15 +398,13 @@ final class DiggingSession {
         message = "Saved this digging creek"
     }
 
-    private static func isLegacyV1Envelope(_ data: Data) -> Bool {
-        guard let envelope = try? JSONDecoder().decode(DiggingSnapshotEnvelope.self, from: data) else {
-            return false
-        }
-        return envelope.kind == "digging-surface"
-            && envelope.schemaVersion == 1
-            && envelope.world.originalSchemaVersion == 1
-            && envelope.world.originalCompatibilityID == SurfaceWorld.legacyCompatibilityID
-            && (try? envelope.world.validated()) != nil
+    private static func priorEnvelopeVersion(_ data: Data) -> Int? {
+        guard let envelope = try? JSONDecoder().decode(DiggingSnapshotEnvelope.self, from: data),
+              envelope.kind == "digging-surface",
+              (1...2).contains(envelope.schemaVersion),
+              envelope.schemaVersion == envelope.world.originalSchemaVersion,
+              (try? envelope.restoredWorld()) != nil else { return nil }
+        return envelope.schemaVersion
     }
 
     func resume() throws {
@@ -328,7 +425,11 @@ final class DiggingSession {
         pendingDugCoordinates.removeAll(keepingCapacity: true)
         pendingObservationTicks = 0
         let lowered = world.cells.count { $0.excavationDepth > 0.000_001 }
+        lastEditTarget = nil
+        capturedAccessibilityFillTarget = nil
         sceneSummary = "Resumed at tick \(world.tick) with \(lowered) lowered patches."
+        lastFillChangedCellCount = 0
+        lastFillWetCellCount = 0
     }
 }
 

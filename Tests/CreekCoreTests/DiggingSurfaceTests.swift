@@ -57,6 +57,168 @@ func capturedFloorIsPersistentAndCutOnly() throws {
     #expect(abs(world.materialResidual) < 1e-8)
 }
 
+@Test("Captured fill target raises only lower cells and adds only actual material")
+func capturedFillIsFixedAndRaiseOnly() throws {
+    var cells = Array(repeating: SurfaceCell(groundHeight: 1), count: 25)
+    cells[6] = SurfaceCell(groundHeight: 1.3)
+    cells[7] = SurfaceCell(groundHeight: 0.8)
+    cells[8] = SurfaceCell(groundHeight: 1.5)
+    var world = try SurfaceWorld(
+        width: 5, height: 5, cells: cells,
+        source: .init(column: 2, row: 0), outlet: .init(column: 2, row: 4),
+        sourceWaterPerTick: 0, sourceDepthCap: 0
+    )
+    let target = try world.fillTarget(startingAt: .init(column: 1, row: 1))
+    let lowerAdded = try world.fill(.init(column: 2, row: 1), toGround: target)
+    let higherAdded = try world.fill(.init(column: 3, row: 1), toGround: target)
+    let startAdded = try world.fill(.init(column: 1, row: 1), toGround: target)
+
+    #expect(target == 1.3)
+    #expect(abs(lowerAdded - 0.5) < 1e-12)
+    #expect(higherAdded == 0)
+    #expect(startAdded == 0)
+    #expect(world.cells[7].groundHeight == target)
+    #expect(world.cells[8].groundHeight == 1.5)
+    #expect(abs(world.materialLedger.externallyAddedFill - 0.5) < 1e-12)
+    #expect(abs(world.materialResidual) < 1e-12)
+}
+
+@Test("Extreme authored grounds reach the same captured global fill plane")
+func globalFillCeilingDoesNotClampPerDestination() throws {
+    var cells = Array(repeating: SurfaceCell(groundHeight: 0.2), count: 25)
+    cells[6] = SurfaceCell(groundHeight: 2.0)
+    cells[7] = SurfaceCell(groundHeight: 0.2)
+    cells[8] = SurfaceCell(groundHeight: 0.9)
+    cells[11] = SurfaceCell(groundHeight: 2.2)
+    var world = try SurfaceWorld(
+        width: 5, height: 5, cells: cells,
+        source: .init(column: 2, row: 0), outlet: .init(column: 2, row: 4),
+        sourceWaterPerTick: 0, sourceDepthCap: 0
+    )
+    let target = try world.fillTarget(startingAt: .init(column: 1, row: 1))
+    let first = try world.fill(.init(column: 2, row: 1), toGround: target)
+    let second = try world.fill(.init(column: 3, row: 1), toGround: target)
+    let above = try world.fill(.init(column: 1, row: 2), toGround: target)
+
+    #expect(target == 2.0)
+    #expect(first == 1.8)
+    #expect(second == 1.1)
+    #expect(world.cells[7].groundHeight == target)
+    #expect(world.cells[8].groundHeight == target)
+    #expect(above == 0)
+    #expect(world.cells[11].groundHeight == 2.2)
+    #expect((try? world.validated()) != nil)
+    #expect(abs(world.materialResidual) < 1e-12)
+}
+
+@Test("Fill rejects a captured plane above the one world-wide ceiling atomically")
+func fillAboveGlobalCeilingIsNoOp() throws {
+    var world = DiggingExperimentTerrain.newWorld(settlingTicks: 0)
+    let before = world
+    #expect(throws: SurfaceWorldError.invalidAmount) {
+        try world.fill(.init(column: 7, row: 10), toGround: world.safeGlobalFillCeiling + 0.001)
+    }
+    #expect(world == before)
+}
+
+@Test("Submerged fill preserves water instantly and ordinary ticks redistribute it")
+func submergedFillPreservesThenRedistributesWater() throws {
+    var cells = Array(repeating: SurfaceCell(groundHeight: 1), count: 25)
+    cells[6] = SurfaceCell(groundHeight: 1.2)
+    cells[7] = SurfaceCell(groundHeight: 0.8, waterDepth: 0.3)
+    var world = try SurfaceWorld(
+        width: 5, height: 5, cells: cells,
+        source: .init(column: 2, row: 0), outlet: .init(column: 2, row: 4),
+        sourceWaterPerTick: 0, sourceDepthCap: 0
+    )
+    let wet = SurfaceCoordinate(column: 2, row: 1)
+    let neighbor = SurfaceCoordinate(column: 2, row: 2)
+    let wetIndex = world.index(of: wet)!
+    let neighborIndex = world.index(of: neighbor)!
+    let target = try world.fillTarget(startingAt: .init(column: 1, row: 1))
+    let waterBefore = world.totalWater
+    let depthBefore = world.cells[wetIndex].waterDepth
+    let surfaceBefore = world.cells[wetIndex].surfaceHeight
+
+    _ = try world.fill(wet, toGround: target)
+    #expect(world.cells[wetIndex].waterDepth == depthBefore)
+    #expect(world.totalWater == waterBefore)
+    #expect(world.cells[wetIndex].surfaceHeight > surfaceBefore)
+    #expect(world.cells[neighborIndex].waterDepth == 0)
+
+    let stepped = world.step()
+    #expect(stepped)
+    #expect(world.cells[neighborIndex].waterDepth > 0)
+    #expect(abs(world.waterResidual) < 1e-12)
+}
+
+@Test("Invalid fill is atomic")
+func invalidFillIsAtomic() throws {
+    var world = DiggingExperimentTerrain.newWorld(settlingTicks: 0)
+    let before = world
+    #expect(throws: SurfaceWorldError.invalidAmount) {
+        try world.fill(.init(column: 7, row: 10), toGround: .infinity)
+    }
+    #expect(world == before)
+    #expect(throws: SurfaceWorldError.unsafeToDig(.init(column: 0, row: 0))) {
+        try world.fill(.init(column: 0, row: 0), toGround: 2)
+    }
+    #expect(world == before)
+}
+
+@Test("Filled ground follows the ordinary erosion kernel without provenance")
+func fillErodesAsOrdinaryGround() throws {
+    var lowCells = Array(repeating: SurfaceCell(groundHeight: 1), count: 25)
+    lowCells[6] = SurfaceCell(groundHeight: 1.2, waterDepth: 0.3)
+    lowCells[7] = SurfaceCell(groundHeight: 0.8, waterDepth: 0.3)
+    var filled = try SurfaceWorld(
+        width: 5, height: 5, cells: lowCells,
+        source: .init(column: 2, row: 0), outlet: .init(column: 2, row: 4),
+        sourceWaterPerTick: 0, sourceDepthCap: 0
+    )
+    let coordinate = SurfaceCoordinate(column: 2, row: 1)
+    let index = filled.index(of: coordinate)!
+    _ = try filled.fill(coordinate, toGround: 1.2)
+
+    // Reconstruct the exact same current cell values without the fill ledger history.
+    // The ordinary kernel receives no provenance flag and therefore evolves identically.
+    var ordinary = try SurfaceWorld(
+        width: 5, height: 5, cells: filled.cells,
+        source: .init(column: 2, row: 0), outlet: .init(column: 2, row: 4),
+        sourceWaterPerTick: 0, sourceDepthCap: 0
+    )
+    #expect(filled.cells == ordinary.cells)
+    filled.step(count: 30)
+    ordinary.step(count: 30)
+    #expect(filled.cells == ordinary.cells)
+    #expect(filled.lastEdgeTransfers == ordinary.lastEdgeTransfers)
+    #expect(filled.cells[index].groundHeight < 1.2 || filled.cells[index].sediment > 0)
+    #expect(filled.cells.enumerated().contains { $0.offset != index && $0.element.sediment > 0 }
+        || filled.materialLedger.exported > 0)
+    #expect(filled.materialLedger.externallyAddedFill > 0)
+    #expect(ordinary.materialLedger.externallyAddedFill == 0)
+    #expect(abs(filled.materialResidual) < 1e-8)
+    #expect(abs(ordinary.materialResidual) < 1e-8)
+}
+
+@Test("Alternating fill, dig, erosion, transport, and export preserve the material balance")
+func fillDigLongMaterialBalance() throws {
+    var world = DiggingExperimentTerrain.newWorld()
+    for cycle in 0..<12 {
+        let high = SurfaceCoordinate(column: 5 + cycle % 3, row: 6 + cycle)
+        let low = SurfaceCoordinate(column: 8 + cycle % 2, row: 6 + cycle)
+        let target = try world.fillTarget(startingAt: high)
+        _ = try world.fill(low, toGround: target)
+        let floor = try world.cutFloor(startingAt: low)
+        _ = try world.excavate(high, toFloor: floor)
+        world.step(count: 80)
+    }
+    #expect(world.materialLedger.externallyAddedFill > 0)
+    #expect(world.materialLedger.excavated > 0)
+    #expect(abs(world.materialResidual) < 1e-7)
+    #expect((try? world.validated()) != nil)
+}
+
 @Test("No water flow performs no erosion")
 func noFlowNoErosion() throws {
     let cells = Array(repeating: SurfaceCell(groundHeight: 1), count: 25)
@@ -182,15 +344,67 @@ func v1SurfaceMigration() throws {
     json["cells"] = oldCells
     let data = try JSONSerialization.data(withJSONObject: json)
     let migrated = try JSONDecoder().decode(SurfaceWorld.self, from: data)
-    #expect(migrated.schemaVersion == 2)
+    #expect(migrated.schemaVersion == SurfaceWorld.schemaVersion)
     #expect(migrated.cells.map(\.groundHeight) == current.cells.map(\.groundHeight))
     #expect(migrated.cells.map(\.waterDepth) == current.cells.map(\.waterDepth))
     #expect(migrated.totalCarriedSediment == 0)
     #expect(abs(migrated.materialResidual) < 1e-8)
 }
 
-@Test("Schema two rejects absent material ledger and absent cell sediment")
-func v2SurfaceRequiresMaterialFields() throws {
+@Test("Schema two migrates with explicit zero external fill")
+func v2SurfaceMigrationAddsZeroFill() throws {
+    let current = DiggingExperimentTerrain.newWorld(settlingTicks: 0)
+    var json = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(current)) as? [String: Any])
+    json["schemaVersion"] = 2
+    json["compatibilityID"] = SurfaceWorld.previousCompatibilityID
+    var ledger = try #require(json["materialLedger"] as? [String: Any])
+    ledger.removeValue(forKey: "externallyAddedFill")
+    json["materialLedger"] = ledger
+    let migrated = try JSONDecoder().decode(
+        SurfaceWorld.self,
+        from: JSONSerialization.data(withJSONObject: json)
+    )
+    #expect(migrated.schemaVersion == SurfaceWorld.schemaVersion)
+    #expect(migrated.originalSchemaVersion == 2)
+    #expect(migrated.materialLedger.externallyAddedFill == 0)
+    #expect(migrated.cells == current.cells)
+    #expect(abs(migrated.materialResidual) < 1e-8)
+}
+
+@Test("Prior schemas enforce their original maximum bed rise before migration")
+func priorSchemaRejectsFillSizedBedRise() throws {
+    let current = DiggingExperimentTerrain.newWorld(settlingTicks: 0)
+    let encoded = try JSONEncoder().encode(current)
+
+    var v2 = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+    v2["schemaVersion"] = 2
+    v2["compatibilityID"] = SurfaceWorld.previousCompatibilityID
+    var v2Cells = try #require(v2["cells"] as? [[String: Any]])
+    v2Cells[21]["groundHeight"] = (v2Cells[21]["authoredGroundHeight"] as! Double) + SurfaceWorld.maximumBedRise + 0.01
+    v2["cells"] = v2Cells
+    var v2Ledger = try #require(v2["materialLedger"] as? [String: Any])
+    v2Ledger.removeValue(forKey: "externallyAddedFill")
+    v2Ledger["initialGround"] = (v2Ledger["initialGround"] as! Double) + SurfaceWorld.maximumBedRise + 0.01
+    v2["materialLedger"] = v2Ledger
+    #expect(throws: SurfaceWorldError.invalidState) {
+        try JSONDecoder().decode(SurfaceWorld.self, from: JSONSerialization.data(withJSONObject: v2))
+    }
+
+    var v1 = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+    v1["schemaVersion"] = 1
+    v1["compatibilityID"] = SurfaceWorld.legacyCompatibilityID
+    v1.removeValue(forKey: "materialLedger")
+    var v1Cells = try #require(v1["cells"] as? [[String: Any]])
+    for index in v1Cells.indices { v1Cells[index].removeValue(forKey: "sediment") }
+    v1Cells[21]["groundHeight"] = (v1Cells[21]["authoredGroundHeight"] as! Double) + SurfaceWorld.maximumBedRise + 0.01
+    v1["cells"] = v1Cells
+    #expect(throws: SurfaceWorldError.invalidState) {
+        try JSONDecoder().decode(SurfaceWorld.self, from: JSONSerialization.data(withJSONObject: v1))
+    }
+}
+
+@Test("Current schema rejects absent material ledger, fill counter, and cell sediment")
+func currentSurfaceRequiresMaterialFields() throws {
     let current = DiggingExperimentTerrain.newWorld(settlingTicks: 0)
     let encoded = try JSONEncoder().encode(current)
 
@@ -200,6 +414,17 @@ func v2SurfaceRequiresMaterialFields() throws {
         try JSONDecoder().decode(
             SurfaceWorld.self,
             from: JSONSerialization.data(withJSONObject: withoutLedger)
+        )
+    }
+
+    var withoutFillCounter = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+    var ledger = try #require(withoutFillCounter["materialLedger"] as? [String: Any])
+    ledger.removeValue(forKey: "externallyAddedFill")
+    withoutFillCounter["materialLedger"] = ledger
+    #expect(throws: DecodingError.self) {
+        try JSONDecoder().decode(
+            SurfaceWorld.self,
+            from: JSONSerialization.data(withJSONObject: withoutFillCounter)
         )
     }
 

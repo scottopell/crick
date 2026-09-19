@@ -12,6 +12,11 @@ public struct SurfaceCoordinate: Codable, Equatable, Hashable, Sendable {
     }
 }
 
+public enum SurfaceEditMode: String, CaseIterable, Codable, Equatable, Sendable {
+    case dig
+    case fill
+}
+
 public struct SurfaceCell: Codable, Equatable, Sendable {
     public var groundHeight: Double
     public var authoredGroundHeight: Double
@@ -61,11 +66,33 @@ public struct SurfaceMaterialLedger: Codable, Equatable, Sendable {
     public var initialGround: Double
     public var excavated: Double
     public var exported: Double
+    public var externallyAddedFill: Double
 
-    public init(initialGround: Double, excavated: Double = 0, exported: Double = 0) {
+    public init(
+        initialGround: Double,
+        excavated: Double = 0,
+        exported: Double = 0,
+        externallyAddedFill: Double = 0
+    ) {
         self.initialGround = initialGround
         self.excavated = excavated
         self.exported = exported
+        self.externallyAddedFill = externallyAddedFill
+    }
+}
+
+private struct LegacySurfaceMaterialLedger: Decodable {
+    let initialGround: Double
+    let excavated: Double
+    let exported: Double
+
+    var migrated: SurfaceMaterialLedger {
+        SurfaceMaterialLedger(
+            initialGround: initialGround,
+            excavated: excavated,
+            exported: exported,
+            externallyAddedFill: 0
+        )
     }
 }
 
@@ -134,8 +161,9 @@ private struct LegacySurfaceCell: Decodable {
 }
 
 public struct SurfaceWorld: Codable, Equatable, Sendable {
-    public static let schemaVersion = 2
-    public static let compatibilityID = "crick-digging-surface-v2"
+    public static let schemaVersion = 3
+    public static let compatibilityID = "crick-digging-surface-v3"
+    public static let previousCompatibilityID = "crick-digging-surface-v2"
     public static let legacyCompatibilityID = "crick-digging-surface-v1"
     /// The default interaction scoop. Persisted v1 worlds store absolute ground
     /// heights, so increasing this future edit amount does not reinterpret or
@@ -143,6 +171,7 @@ public struct SurfaceWorld: Codable, Equatable, Sendable {
     public static let excavationIncrement = 0.11
     public static let maximumExcavationDepth = 0.44
     public static let maximumBedRise = 0.22
+    public static let maximumFillRise = 0.88
     public static let erosionPerTickLimit = 0.0012
     public static let depositionPerTickLimit = 0.0024
     public static let hydraulicTolerance = 0.002
@@ -176,6 +205,7 @@ public struct SurfaceWorld: Codable, Equatable, Sendable {
         let decodedVersion = try container.decode(Int.self, forKey: .schemaVersion)
         let decodedCompatibility = try container.decode(String.self, forKey: .compatibilityID)
         guard (decodedVersion == Self.schemaVersion && decodedCompatibility == Self.compatibilityID)
+            || (decodedVersion == 2 && decodedCompatibility == Self.previousCompatibilityID)
             || (decodedVersion == 1 && decodedCompatibility == Self.legacyCompatibilityID) else {
             throw SurfaceWorldError.invalidState
         }
@@ -202,17 +232,25 @@ public struct SurfaceWorld: Codable, Equatable, Sendable {
             let excavated = cells.reduce(0) { $0 + max(0, $1.authoredGroundHeight - $1.groundHeight) }
             materialLedger = SurfaceMaterialLedger(
                 initialGround: cells.reduce(0) { $0 + $1.groundHeight } + excavated,
-                excavated: excavated
+                excavated: excavated,
+                externallyAddedFill: 0
             )
+        } else if decodedVersion == 2 {
+            // Schema 2 remains strict about all of its fields. Only the field that
+            // did not yet exist is supplied by this explicit lossy migration.
+            materialLedger = try container.decode(
+                LegacySurfaceMaterialLedger.self,
+                forKey: .materialLedger
+            ).migrated
         } else {
-            // No default is permitted for current snapshots.
+            // Current snapshots are strict: added fill must be explicit, including zero.
             materialLedger = try container.decode(SurfaceMaterialLedger.self, forKey: .materialLedger)
         }
         lastEdgeTransfers = try container.decodeIfPresent(
             [SurfaceEdgeTransfer].self,
             forKey: .lastEdgeTransfers
         ) ?? []
-        try validateCompleteInvariant()
+        try validateCompleteInvariant(enforceLegacyBedRise: decodedVersion < Self.schemaVersion)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -275,9 +313,17 @@ public struct SurfaceWorld: Codable, Equatable, Sendable {
     public var accountedMaterial: Double {
         totalGroundMaterial + totalCarriedSediment + materialLedger.exported + materialLedger.excavated
     }
-    public var materialResidual: Double { accountedMaterial - materialLedger.initialGround }
+    public var expectedMaterial: Double {
+        materialLedger.initialGround + materialLedger.externallyAddedFill
+    }
+    public var materialResidual: Double { accountedMaterial - expectedMaterial }
     public var safeGlobalCutFloor: Double {
         (cells.map(\.authoredGroundHeight).min() ?? 0) - Self.maximumExcavationDepth
+    }
+    /// One finite world-wide ceiling keeps a captured fill plane fixed across every
+    /// destination, including destinations whose authored ground is much lower.
+    public var safeGlobalFillCeiling: Double {
+        (cells.map(\.authoredGroundHeight).max() ?? 0) + Self.maximumFillRise
     }
 
     /// Captures the immutable floor used by an entire pointer gesture.
@@ -285,6 +331,17 @@ public struct SurfaceWorld: Codable, Equatable, Sendable {
         guard let index = index(of: coordinate) else { throw SurfaceWorldError.invalidCell(coordinate) }
         guard isSafeToDig(coordinate) else { throw SurfaceWorldError.unsafeToDig(coordinate) }
         return max(safeGlobalCutFloor, cells[index].groundHeight - Self.excavationIncrement)
+    }
+
+    /// Captures the immutable ground reference used by an entire fill gesture.
+    public func fillTarget(startingAt coordinate: SurfaceCoordinate) throws -> Double {
+        guard let index = index(of: coordinate) else { throw SurfaceWorldError.invalidCell(coordinate) }
+        guard isSafeToDig(coordinate) else { throw SurfaceWorldError.unsafeToDig(coordinate) }
+        let target = cells[index].groundHeight
+        guard target.isFinite, target <= safeGlobalFillCeiling + 1e-12 else {
+            throw SurfaceWorldError.invalidAmount
+        }
+        return target
     }
 
     public func index(of coordinate: SurfaceCoordinate) -> Int? {
@@ -382,6 +439,23 @@ public struct SurfaceWorld: Codable, Equatable, Sendable {
         cells[index].groundHeight -= removed
         materialLedger.excavated += removed
         return removed
+    }
+
+    /// Raise-only operation. Water depth is unchanged, so submerged fill raises the
+    /// local water surface until subsequent ordinary ticks redistribute that water.
+    @discardableResult
+    public mutating func fill(_ coordinate: SurfaceCoordinate, toGround target: Double) throws -> Double {
+        guard target.isFinite, target <= safeGlobalFillCeiling + 1e-12 else {
+            throw SurfaceWorldError.invalidAmount
+        }
+        guard let index = index(of: coordinate) else { throw SurfaceWorldError.invalidCell(coordinate) }
+        guard isSafeToDig(coordinate) else { throw SurfaceWorldError.unsafeToDig(coordinate) }
+        let added = max(0, target - cells[index].groundHeight)
+        let nextAdded = materialLedger.externallyAddedFill + added
+        guard nextAdded.isFinite else { throw SurfaceWorldError.invalidAmount }
+        cells[index].groundHeight += added
+        materialLedger.externallyAddedFill = nextAdded
+        return added
     }
 
     /// Advances one fixed tick. Every cardinal transfer is derived from the same
@@ -538,7 +612,7 @@ public struct SurfaceWorld: Codable, Equatable, Sendable {
 
     /// The single complete state gate used by both construction and decoded-state
     /// restoration. Keep every persisted invariant here so no entry path can drift.
-    private func validateCompleteInvariant() throws {
+    private func validateCompleteInvariant(enforceLegacyBedRise: Bool = false) throws {
         guard schemaVersion == Self.schemaVersion,
               compatibilityID == Self.compatibilityID else {
             throw SurfaceWorldError.invalidState
@@ -561,16 +635,21 @@ public struct SurfaceWorld: Codable, Equatable, Sendable {
               source.row == 0, outlet.row == height - 1 else {
             throw SurfaceWorldError.invalidBoundary
         }
-        guard cells.allSatisfy({ cell in
+        let globalFillCeiling = safeGlobalFillCeiling
+        guard globalFillCeiling.isFinite,
+              cells.allSatisfy({ cell in
             let displacement = cell.groundHeight - cell.authoredGroundHeight
             let surface = cell.groundHeight + cell.waterDepth
+            let withinSchemaCeiling = enforceLegacyBedRise
+                ? displacement <= Self.maximumBedRise + 1e-12
+                : cell.groundHeight <= globalFillCeiling + 1e-12
             return cell.groundHeight.isFinite && cell.authoredGroundHeight.isFinite
                 && cell.waterDepth.isFinite && cell.waterDepth >= 0
                 && cell.flowX.isFinite && cell.flowY.isFinite
                 && cell.sediment.isFinite && cell.sediment >= 0
                 && displacement.isFinite
                 && cell.groundHeight >= safeGlobalCutFloor - 1e-12
-                && displacement <= Self.maximumBedRise + 1e-12
+                && withinSchemaCeiling
                 && surface.isFinite
         }) else { throw SurfaceWorldError.invalidState }
 
@@ -585,11 +664,14 @@ public struct SurfaceWorld: Codable, Equatable, Sendable {
               expected.isFinite, expected >= -1e-12,
               actual.isFinite,
               abs(actual - expected) <= 1e-8 * max(1, expected),
-              materialLedger.initialGround.isFinite,
+              materialLedger.initialGround.isFinite, materialLedger.initialGround >= 0,
               materialLedger.excavated.isFinite, materialLedger.excavated >= 0,
               materialLedger.exported.isFinite, materialLedger.exported >= 0,
+              materialLedger.externallyAddedFill.isFinite,
+              materialLedger.externallyAddedFill >= 0,
+              expectedMaterial.isFinite,
               accountedMaterial.isFinite,
-              abs(materialResidual) <= 1e-8 * max(1, materialLedger.initialGround),
+              abs(materialResidual) <= 1e-8 * max(1, expectedMaterial),
               lastEdgeTransfers.allSatisfy({ transfer in
                   guard transfer.amount.isFinite, transfer.amount >= 0,
                         index(of: transfer.from) != nil,

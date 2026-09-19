@@ -60,10 +60,13 @@ struct SurfaceMapLayout: Equatable {
 struct DiggingBrushState: Equatable {
     private(set) var touched: Set<SurfaceCoordinate> = []
     var previousCoordinate: SurfaceCoordinate?
-    private(set) var capturedFloor: Double?
+    private(set) var capturedTarget: Double?
+    private(set) var capturedMode: SurfaceEditMode?
 
-    mutating func captureFloor(_ floor: Double) {
-        if capturedFloor == nil { capturedFloor = floor }
+    mutating func capture(target: Double, mode: SurfaceEditMode) {
+        guard capturedTarget == nil else { return }
+        capturedTarget = target
+        capturedMode = mode
     }
 
     mutating func takeFresh(_ coordinates: [SurfaceCoordinate]) -> [SurfaceCoordinate] {
@@ -73,7 +76,8 @@ struct DiggingBrushState: Equatable {
     mutating func reset() {
         touched.removeAll(keepingCapacity: true)
         previousCoordinate = nil
-        capturedFloor = nil
+        capturedTarget = nil
+        capturedMode = nil
     }
 }
 
@@ -82,8 +86,10 @@ struct DiggingSurfaceView: View {
     let selectedCoordinate: SurfaceCoordinate?
     let reduceMotion: Bool
     let interactionEnabled: Bool
+    let editMode: SurfaceEditMode
     let accessibilitySummary: String
-    let onDigCells: ([SurfaceCoordinate], Double) -> Void
+    let onEditBegan: (SurfaceCoordinate, SurfaceEditMode) -> Double?
+    let onEditCells: ([SurfaceCoordinate], Double, SurfaceEditMode) -> Void
     let onGestureEnded: () -> Void
 
     @State private var brush = DiggingBrushState()
@@ -107,12 +113,17 @@ struct DiggingSurfaceView: View {
             .contentShape(Rectangle())
             .gesture(digGesture(layout: layout))
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Diggable gravel creek")
+            .accessibilityLabel("Editable gravel creek, \(editMode.rawValue) mode")
             .accessibilityValue(accessibilitySummary)
-            .accessibilityHint("Drag to excavate. VoiceOver users can move the selected cell with the controls below and choose Dig selected cell.")
+            .accessibilityHint(editMode == .dig
+                ? "Drag to dig to one captured ground level."
+                : "Start on a ground level and drag to raise only lower ground to it.")
             .accessibilityIdentifier("digging-surface")
             .onChange(of: interactionEnabled) { _, enabled in
                 if !enabled { clearGestureState(preserveOutline: false) }
+            }
+            .onChange(of: editMode) { _, _ in
+                clearGestureState(preserveOutline: false)
             }
             .onDisappear { clearGestureState(preserveOutline: false) }
         }
@@ -298,7 +309,7 @@ struct DiggingSurfaceView: View {
         }
         context.stroke(
             outline,
-            with: .color(.orange.opacity(0.78)),
+            with: .color((brush.capturedMode == .fill ? Color.mint : Color.orange).opacity(0.78)),
             style: StrokeStyle(
                 lineWidth: max(2, min(layout.cellSize.width, layout.cellSize.height) * 0.22),
                 lineCap: .round,
@@ -326,8 +337,8 @@ struct DiggingSurfaceView: View {
                       world.isSafeToDig(coordinate) else { return }
                 if brush.touched.isEmpty {
                     visibleStroke.removeAll(keepingCapacity: true)
-                    guard let floor = try? world.cutFloor(startingAt: coordinate) else { return }
-                    brush.captureFloor(floor)
+                    guard let target = onEditBegan(coordinate, editMode) else { return }
+                    brush.capture(target: target, mode: editMode)
                 }
                 let candidates: [SurfaceCoordinate]
                 if let previousCoordinate = brush.previousCoordinate {
@@ -336,9 +347,11 @@ struct DiggingSurfaceView: View {
                     candidates = [coordinate]
                 }
                 let fresh = brush.takeFresh(candidates)
-                if !fresh.isEmpty, let floor = brush.capturedFloor {
+                if !fresh.isEmpty,
+                   let target = brush.capturedTarget,
+                   let mode = brush.capturedMode {
                     visibleStroke.append(contentsOf: fresh)
-                    onDigCells(fresh, floor)
+                    onEditCells(fresh, target, mode)
                 }
                 brush.previousCoordinate = coordinate
             }

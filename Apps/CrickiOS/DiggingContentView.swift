@@ -56,8 +56,10 @@ struct DiggingContentView: View {
                         ? session.selectedCoordinate : nil,
                     reduceMotion: reduceMotion,
                     interactionEnabled: scenePhase == .active && !showLegacy && !showMenu,
+                    editMode: session.editMode,
                     accessibilitySummary: session.sceneSummary,
-                    onDigCells: dig,
+                    onEditBegan: session.beginEdit,
+                    onEditCells: edit,
                     onGestureEnded: flowAfterDig
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -133,7 +135,7 @@ struct DiggingContentView: View {
     private var header: some View {
         HStack(alignment: .top, spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
-                Text("DIG THE BEND")
+                Text("SHAPE THE BEND")
                     .font(.caption.weight(.bold))
                     .tracking(1.35)
                     .foregroundStyle(.mint)
@@ -173,6 +175,33 @@ struct DiggingContentView: View {
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.orange.opacity(0.9))
                     .accessibilityIdentifier("excavated-cell-count")
+                Text("\(session.lastFillChangedCellCount) stroke-filled · \(session.lastFillWetCellCount) wet · \(displayedWorld.materialLedger.externallyAddedFill.formatted(.number.precision(.fractionLength(6)))) added")
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(.mint.opacity(0.9))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.65)
+                    .accessibilityIdentifier("fill-evidence")
+            }
+
+            Picker("Ground tool", selection: $session.editMode) {
+                Label("Dig", systemImage: "arrow.down.to.line.compact").tag(SurfaceEditMode.dig)
+                Label("Fill", systemImage: "arrow.up.to.line.compact").tag(SurfaceEditMode.fill)
+            }
+            .pickerStyle(.segmented)
+            .accessibilityIdentifier("ground-tool")
+
+            HStack(spacing: 8) {
+                Text(session.editMode == .dig ? "DIG · one layer below start" : "FILL · ground level at start")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(session.editMode == .dig ? .orange : .mint)
+                    .accessibilityIdentifier("ground-tool-status")
+                Spacer()
+                if let target = session.lastEditTarget {
+                    Text("Target ground \(target.formatted(.number.precision(.fractionLength(2))))")
+                        .font(.caption2.monospacedDigit())
+                        .foregroundStyle(.white.opacity(0.72))
+                        .accessibilityIdentifier("ground-target")
+                }
             }
 
             if showAccessibilityDigging {
@@ -183,7 +212,9 @@ struct DiggingContentView: View {
                 HStack(spacing: 9) { primaryControls }
                 VStack(spacing: 7) { primaryControls }
             }
-            Text("A stroke cuts to one captured layer. Hold 2× to watch the same creek steps faster.")
+            Text(session.editMode == .dig
+                 ? "Start a stroke to capture one lower ground layer."
+                 : "Start on a level; only lower ground rises to that fixed target.")
                 .font(.caption2)
                 .foregroundStyle(.white.opacity(0.58))
                 .multilineTextAlignment(.center)
@@ -236,7 +267,7 @@ struct DiggingContentView: View {
                         selectionButton("Down", icon: "arrow.down", columns: 0, rows: 1)
                         selectionButton("Right", icon: "arrow.right", columns: 1, rows: 0)
                     }
-                    digSelectedButton
+                    selectedEditButtons
                 }
             }
             .font(.caption)
@@ -247,18 +278,30 @@ struct DiggingContentView: View {
     private var selectionControls: some View {
         selectionButton("Left", icon: "arrow.left", columns: -1, rows: 0)
         selectionButton("Up", icon: "arrow.up", columns: 0, rows: -1)
-        digSelectedButton
+        selectedEditButtons
         selectionButton("Down", icon: "arrow.down", columns: 0, rows: 1)
         selectionButton("Right", icon: "arrow.right", columns: 1, rows: 0)
     }
 
-    private var digSelectedButton: some View {
-        Button("Dig selected cell") {
-            if session.excavateSelected() { displayedWorld = session.world }
+    @ViewBuilder
+    private var selectedEditButtons: some View {
+        if session.editMode == .fill {
+            Button("Capture selected level") {
+                _ = session.captureSelectedFillTarget()
+            }
+            .buttonStyle(.bordered)
+            .tint(.mint)
+            .accessibilityIdentifier("capture-fill-level")
+        }
+        Button(session.editMode == .dig ? "Dig selected cell" : "Fill selected cell") {
+            if session.applySelectedEdit() { displayedWorld = session.world }
         }
         .buttonStyle(.borderedProminent)
-        .tint(.brown.opacity(0.9))
-        .accessibilityIdentifier("dig-selected-cell")
+        .tint(session.editMode == .dig ? .brown.opacity(0.9) : .mint.opacity(0.75))
+        .disabled(session.editMode == .fill && session.capturedAccessibilityFillTarget == nil)
+        .accessibilityHint(session.editMode == .fill && session.capturedAccessibilityFillTarget == nil
+            ? "Capture selected level first" : "Applies the captured ground target")
+        .accessibilityIdentifier(session.editMode == .dig ? "dig-selected-cell" : "fill-selected-cell")
     }
 
     private func selectionButton(
@@ -280,8 +323,12 @@ struct DiggingContentView: View {
         displayedWorld.cells.count(where: { $0.excavationDepth > 0.000_001 })
     }
 
-    private func dig(_ coordinates: [SurfaceCoordinate], floor: Double) {
-        guard session.excavate(coordinates, toFloor: floor) else { return }
+    private func edit(
+        _ coordinates: [SurfaceCoordinate],
+        target: Double,
+        mode: SurfaceEditMode
+    ) {
+        guard session.apply(coordinates, target: target, mode: mode) else { return }
         displayedWorld = session.world
     }
 

@@ -247,8 +247,10 @@ final class CausalErosionVisualProofTests: XCTestCase {
                 selectedCoordinate: nil,
                 reduceMotion: true,
                 interactionEnabled: false,
+                editMode: .dig,
                 accessibilitySummary: metadata,
-                onDigCells: { _, _ in },
+                onEditBegan: { _, _ in nil },
+                onEditCells: { _, _, _ in },
                 onGestureEnded: {}
             )
         }
@@ -292,6 +294,48 @@ func liveObservationUsesPhysicalTicks() {
     #expect(one.sceneSummary != pending)
     #expect(one.message == "Water responded for 18 physical ticks")
     #expect(two.message == "Water responded for 18 physical ticks")
+}
+
+@MainActor
+@Test("Successful fill before tick eighteen replaces rather than merges dig observation")
+func fillReplacesPendingDigObservation() throws {
+    let session = DiggingSession(snapshotStore: MemorySnapshotStore())
+    let dig = SurfaceCoordinate(column: 7, row: 10)
+    #expect(session.excavate([dig]))
+    _ = session.advanceLive(steps: 8)
+
+    let safe = session.world.cells.indices.compactMap(session.world.coordinate).filter(session.world.isSafeToDig)
+    let high = try #require(safe.max { session.world.cells[session.world.index(of: $0)!].groundHeight
+        < session.world.cells[session.world.index(of: $1)!].groundHeight })
+    let low = try #require(safe.min { session.world.cells[session.world.index(of: $0)!].groundHeight
+        < session.world.cells[session.world.index(of: $1)!].groundHeight })
+    let target = try #require(session.beginEdit(at: high, mode: .fill))
+    #expect(session.apply([low], target: target, mode: .fill))
+    let fillPending = session.sceneSummary
+    #expect(fillPending.contains("filled"))
+    #expect(!fillPending.contains("dug"))
+
+    _ = session.advanceLive(steps: 18)
+    #expect(session.sceneSummary.contains("filled"))
+    #expect(!session.sceneSummary.contains("dug"))
+}
+
+@MainActor
+@Test("A second no-op gesture still exposes its own target without false response")
+func noOpSecondGestureUpdatesTarget() throws {
+    let session = DiggingSession(snapshotStore: MemorySnapshotStore())
+    let first = SurfaceCoordinate(column: 7, row: 10)
+    #expect(session.excavate([first]))
+    let oldSummary = session.sceneSummary
+
+    let second = SurfaceCoordinate(column: 12, row: 12)
+    let target = try #require(session.beginEdit(at: second, mode: .fill))
+    #expect(session.lastEditTarget == target)
+    #expect(!session.apply([second], target: target, mode: .fill))
+    _ = session.advanceLive(steps: 18)
+    #expect(session.lastEditTarget == target)
+    #expect(session.sceneSummary == oldSummary)
+    #expect(session.message != "Water responded for 18 physical ticks")
 }
 
 @Test("Live clock hold, release, and ineligible dialog pulses are deterministic")
@@ -351,6 +395,39 @@ func repeatedDiggingDepth() {
     let commonFloor = session.world.cells[session.world.index(of: stroke[0])!].groundHeight
     #expect(session.world.cells[session.world.index(of: stroke[1])!].groundHeight == commonFloor)
     #expect(session.world.cells[session.world.index(of: stroke[2])!].groundHeight == commonFloor)
+}
+
+@MainActor
+@Test("Accessibility fill captures a bank, navigates, then applies one fixed target")
+func accessibleFixedFillTarget() {
+    let session = DiggingSession(snapshotStore: MemorySnapshotStore())
+    session.editMode = .fill
+    let origin = session.selectedCoordinate
+    #expect(session.captureSelectedFillTarget())
+    let target = session.capturedAccessibilityFillTarget
+    #expect(target != nil)
+
+    session.moveSelection(columns: 1, rows: 1)
+    let destination = session.selectedCoordinate
+    let destinationIndex = session.world.index(of: destination)!
+    let before = session.world.cells[destinationIndex].groundHeight
+    let changed = session.applySelectedEdit()
+    let expected = max(0, target! - before)
+    #expect(changed == (expected > 0))
+    #expect(session.capturedAccessibilityFillTarget == target)
+    #expect(session.selectedCoordinate != origin)
+    #expect(abs(session.world.materialLedger.externallyAddedFill - expected) < 1e-12)
+}
+
+@MainActor
+@Test("Fill selected at its captured starting height is a no-op")
+func accessibleFillStartIsNoOp() {
+    let session = DiggingSession(snapshotStore: MemorySnapshotStore())
+    session.editMode = .fill
+    let before = session.world
+    #expect(session.captureSelectedFillTarget())
+    #expect(!session.applySelectedEdit())
+    #expect(session.world == before)
 }
 
 @MainActor
@@ -460,6 +537,37 @@ func saveWithoutResumePreservesLegacyBytes() throws {
 }
 
 @MainActor
+@Test("Save, resume, and debug copy round-trip external fill accounting exactly")
+func filledWorldPersistenceAndDebugRoundTrip() throws {
+    let store = MemorySnapshotStore()
+    let session = DiggingSession(snapshotStore: store)
+    let safeCoordinates = session.world.cells.indices.compactMap(session.world.coordinate).filter(session.world.isSafeToDig)
+    let high = try #require(safeCoordinates.max { first, second in
+        session.world.cells[session.world.index(of: first)!].groundHeight
+            < session.world.cells[session.world.index(of: second)!].groundHeight
+    })
+    let low = try #require(safeCoordinates.min { first, second in
+        session.world.cells[session.world.index(of: first)!].groundHeight
+            < session.world.cells[session.world.index(of: second)!].groundHeight
+    })
+    let target = try #require(session.beginEdit(at: high, mode: .fill))
+    #expect(session.fill([low], toGround: target))
+    _ = session.advanceCaptured(count: 12)
+    let filled = session.world
+    #expect(filled.materialLedger.externallyAddedFill > 0)
+
+    try session.save()
+    session.reset()
+    try session.resume()
+    #expect(session.world == filled)
+    let copied = try session.debugStateData(appVersion: "0.1.0", buildNumber: "11")
+    let replay = try DiggingDebugStateCodec.decode(copied)
+    #expect(try replay.restoredWorld() == filled)
+    #expect(try replay.restoredWorld().materialLedger.externallyAddedFill
+        == filled.materialLedger.externallyAddedFill)
+}
+
+@MainActor
 @Test("Debug export replays exact authority and metadata without ticking or overwriting save")
 func debugStateExactReadOnlyExport() throws {
     let store = MemorySnapshotStore()
@@ -473,13 +581,13 @@ func debugStateExactReadOnlyExport() throws {
     let worldBefore = session.world
     let selectionBefore = session.selectedCoordinate
     let saveBefore = store.data
-    let data = try session.debugStateData(appVersion: "0.1.0-test", buildNumber: "10-test")
+    let data = try session.debugStateData(appVersion: "0.1.0-test", buildNumber: "11-test")
     let replay = try DiggingDebugStateCodec.decode(data)
 
     #expect(replay.formatIdentifier == DiggingDebugStateEnvelope.formatIdentifier)
     #expect(replay.formatVersion == DiggingDebugStateEnvelope.formatVersion)
     #expect(replay.provenance.appVersion == "0.1.0-test")
-    #expect(replay.provenance.buildNumber == "10-test")
+    #expect(replay.provenance.buildNumber == "11-test")
     #expect(replay.provenance.worldCompatibilityID == SurfaceWorld.compatibilityID)
     #expect(replay.selectedCell == selectionBefore)
     #expect(replay.snapshot.schemaVersion == DiggingSnapshotEnvelope.schemaVersion)
@@ -506,7 +614,7 @@ func debugStateMigratedReplay() throws {
     try session.resume()
     let migratedAuthority = session.world
 
-    let data = try session.debugStateData(appVersion: "0.1.0", buildNumber: "10")
+    let data = try session.debugStateData(appVersion: "0.1.0", buildNumber: "11")
     let replay = try DiggingDebugStateCodec.decode(data)
     let json = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
     let snapshot = try #require(json["snapshot"] as? [String: Any])
@@ -516,7 +624,7 @@ func debugStateMigratedReplay() throws {
     #expect(world["schemaVersion"] as? Int == SurfaceWorld.schemaVersion)
     #expect(world["compatibilityID"] as? String == SurfaceWorld.compatibilityID)
     // A migrated in-memory world retains its original schema provenance solely so
-    // the outer envelope can reject hybrids. Encoded authority is canonical v2;
+    // the outer envelope can reject hybrids. Encoded authority is canonical current schema;
     // compare those exact bytes rather than that non-encoded provenance marker.
     #expect(
         try DiggingJSONCodec.encode(replay.snapshot)
@@ -548,6 +656,8 @@ func interruptedDiggingBrushReset() {
     brush.reset()
     #expect(brush.touched.isEmpty)
     #expect(brush.previousCoordinate == nil)
+    #expect(brush.capturedTarget == nil)
+    #expect(brush.capturedMode == nil)
     #expect(brush.takeFresh([first]) == [first])
 }
 
